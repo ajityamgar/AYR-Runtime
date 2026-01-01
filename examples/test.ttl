@@ -1,0 +1,6 @@
+dikhao "Expression Error Testing"
+
+salary = pucho
+dikhao salary
+agar salary > 233.00
+    dikhao "nice"

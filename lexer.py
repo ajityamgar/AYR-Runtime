@@ -1,178 +1,143 @@
 from dataclasses import dataclass
 
-#-----------------------------------------TOKENS TYPES-----------------------------------------
-TOKEN_KEYWORD = "KEYWORD"
+TOKEN_KEYWORD    = "KEYWORD"
 TOKEN_IDENTIFIER = "IDENTIFIER"
-TOKEN_NUMBER = "NUMBER"
-TOKEN_STRING = "STRING"
-TOKEN_NEWLINE = "NEWLINE"
-TOKEN_OPERATOR = "OPERATOR"
-TOKEN_TAB = "TAB"
-TOKEN_EOF = "EOF"
+TOKEN_NUMBER     = "NUMBER"
+TOKEN_STRING     = "STRING"
+TOKEN_OPERATOR   = "OPERATOR"
+TOKEN_NEWLINE    = "NEWLINE"
+TOKEN_INDENT     = "INDENT"
+TOKEN_DEDENT     = "DEDENT"
+TOKEN_EOF        = "EOF"
 
-#----------------------------------------- KEYWORDS -----------------------------------------
 KEYWORDS = {
-    "dikhao", #print
-    "pucho", #input
-
-    "agar", #if
-    "warna", #else
-    "jabtak", #while
-
-    "kaam", #function
-    "wapas", #return
-
-    "ya", #or
-    "aur", #and
-    "nahi", #not
-
-    "sach", #true
-    "jhoot", #false
-
-    "band", #stop
-    "chalu", # continue
-    "chodo", #skip
-
-    "dekho", #debug
-    "peeche", #backward
-    "aage", #forword
-
+    "dikhao", "pucho",
+    "agar", "warna", "jabtak",
+    "kaam", "wapas",
+    "ya", "aur", "nahi",
+    "sach", "jhoot",
+    "band", "chalu",
+    "none",
 }
 
 OPERATORS = {
     "+", "-", "*", "/", "%",
-    "=", 
-    "==", "!=", "<", ">", "<=", ">=",
-    "&&", "||", "!"
+    "=", "==", "!=", "<", ">", "<=", ">=",
+    "&&", "||", "!",
+    "(", ")", ","
 }
 
-#----------------------------------------- TOKEN CLASS -----------------------------------------
 @dataclass
 class Token:
     type: str
     value: any
     position: int
-
-    def __repr__(self):
-        return f"{self.type}({self.value})"
+    line: int
 
 
-#----------------------------------------- LEXER -----------------------------------------
 class Lexer:
     def __init__(self, text):
         self.text = text
         self.pos = 0
-        self.current_char = self.text[self.pos] if self.text else None
+        self.line = 1
+        self.current_char = text[0] if text else None
+        self.indent_stack = [0]
 
-#----------------------------------------- HELPER METHODS -----------------------------------------
     def advance(self):
         self.pos += 1
-        if self.pos >= len(self.text):
-            self.current_char = None
-        else:
-            self.current_char = self.text[self.pos]
+        self.current_char = self.text[self.pos] if self.pos < len(self.text) else None
 
     def peek(self):
         nxt = self.pos + 1
-        if nxt >= len(self.text):
-            return None
-        return self.text[nxt]
-
-    def skip_spaces(self):
-            while self.current_char == " ":
-                self.advance()
-
-    def skip_comments(self):
-        while self.current_char and self.current_char != "\n":
-            self.advance()
-
-
-#----------------------------------------- TOKEN BUILDER -----------------------------------------
-    def make_number(self):
-        num = ""
-        dot_count = 0
-        
-        while self.current_char and (self.current_char.isdigit() or self.current_char == "."):
-            if self.current_char == ".":
-                dot_count += 1
-                if dot_count > 1:
-                    break
-            num += self.current_char
-            self.advance()
-
-        return Token(TOKEN_NUMBER, float(num) if "." in num else int(num), self.pos)
-
-
-    def make_identifier(self):
-        name = ""
-        while self.current_char and (self.current_char.isalnum() or self.current_char == "_"):
-            name += self.current_char
-            self.advance()
-        
-        if name in KEYWORDS:
-            return Token(TOKEN_KEYWORD, name, self.pos)
-        return Token(TOKEN_IDENTIFIER, name, self.pos)
-
-    def make_string(self):
-        self.advance() # skip opening quote
-        value = ""
-        while self.current_char and self.current_char != '"':
-            value += self.current_char
-            self.advance()
-
-        if self.current_char != '"':
-            raise Exception("String literal not closed")
-
-        self.advance() #skip closing quote
-        return Token(TOKEN_STRING, value, self.pos)
+        return self.text[nxt] if nxt < len(self.text) else None
 
     def make_operator(self):
         op = self.current_char
-        if self.peek() and op + self.peek() in OPERATORS:
+        if self.peek() and (op + self.peek()) in OPERATORS:
             self.advance()
             op += self.current_char
         self.advance()
-        return Token(TOKEN_OPERATOR, op, self.pos)
+        return Token(TOKEN_OPERATOR, op, self.pos, self.line)
 
-    #----------------------------------------- Main Lexer -----------------------------------------
     def tokenize(self):
         tokens = []
-        while self.current_char is not None:
+        at_line_start = True
 
-            if self.current_char == " ":
-                self.skip_spaces()
-                continue
+        while self.current_char:
+            if at_line_start:
+                spaces = 0
+                while self.current_char == " ":
+                    spaces += 1
+                    self.advance()
 
-            if self.current_char == "\t":
-                tokens.append(Token(TOKEN_TAB, "\\t", self.pos))
-                self.advance()
-                continue
+                indent = spaces // 4
+                prev = self.indent_stack[-1]
+                if indent > prev:
+                    self.indent_stack.append(indent)
+                    tokens.append(Token(TOKEN_INDENT, None, self.pos, self.line))
+                elif indent < prev:
+                    while indent < self.indent_stack[-1]:
+                        self.indent_stack.pop()
+                        tokens.append(Token(TOKEN_DEDENT, None, self.pos, self.line))
+                at_line_start = False
 
             if self.current_char == "\n":
-                tokens.append(Token(TOKEN_NEWLINE, "\n", self.pos))
+                tokens.append(Token(TOKEN_NEWLINE, "\n", self.pos, self.line))
+                self.advance()
+                self.line += 1
+                at_line_start = True
+                continue
+
+            if self.current_char == "#":
+                while self.current_char and self.current_char != "\n":
+                    self.advance()
+                continue
+
+            if self.current_char.isspace():
                 self.advance()
                 continue
 
             if self.current_char.isdigit():
-                tokens.append(self.make_number())
+                num = ""
+                while self.current_char and (self.current_char.isdigit() or self.current_char == "."):
+                    num += self.current_char
+                    self.advance()
+                tokens.append(Token(
+                    TOKEN_NUMBER,
+                    float(num) if "." in num else int(num),
+                    self.pos,
+                    self.line
+                ))
                 continue
 
             if self.current_char.isalpha() or self.current_char == "_":
-                tokens.append(self.make_identifier())
+                name = ""
+                while self.current_char and (self.current_char.isalnum() or self.current_char == "_"):
+                    name += self.current_char
+                    self.advance()
+                t = TOKEN_KEYWORD if name in KEYWORDS else TOKEN_IDENTIFIER
+                tokens.append(Token(t, name, self.pos, self.line))
                 continue
 
             if self.current_char == '"':
-                tokens.append(self.make_string())
+                self.advance()
+                val = ""
+                while self.current_char and self.current_char != '"':
+                    val += self.current_char
+                    self.advance()
+                self.advance()
+                tokens.append(Token(TOKEN_STRING, val, self.pos, self.line))
                 continue
 
-            if self.current_char == "#":
-                self.skip_comments()
-                continue
-
-            if self.current_char in "+-*/%=!<>&|":
+            if self.current_char in "+-*/%=!<>&|(),":
                 tokens.append(self.make_operator())
                 continue
 
-            raise Exception(f"Invalid character '{self.current_char}' at position {self.pos}")
-        tokens.append(Token(TOKEN_EOF, None, self.pos))
+            raise Exception(f"Invalid character '{self.current_char}' at line {self.line}")
+
+        while len(self.indent_stack) > 1:
+            self.indent_stack.pop()
+            tokens.append(Token(TOKEN_DEDENT, None, self.pos, self.line))
+
+        tokens.append(Token(TOKEN_EOF, None, self.pos, self.line))
         return tokens
