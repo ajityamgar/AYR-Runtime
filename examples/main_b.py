@@ -3,49 +3,30 @@ from parser import Parser
 from interpreter import Interpreter, ExpressionError
 
 
-def load_program(file_path):
-    code = open(file_path, encoding="utf-8").read()
-    tokens = Lexer(code).tokenize()
-    program = Parser(tokens).parse()
-    interp = Interpreter()
-    interp.load(program)
-    return interp
-
-
 def main():
     file = input("Source file: ").strip()
+    code = open(file, encoding="utf-8").read()
 
-    # initial load
-    interp = load_program(file)
+    tokens = Lexer(code).tokenize()
+    program = Parser(tokens).parse()
+
+    interp = Interpreter()
+    interp.load(program)
 
     print("""
-=== AYR Runtime ===
-
-Commands:
- run                 → reload file & fresh run
- step                → next statement execute
- back                → previous state
- next                → forward state
- env                 → current variables
- detail              → state summary
- detail --timeline   → full execution timeline
- detail --last       → last state snapshot
- detail --memory     → memory usage
- exit                → quit runtime
+Commands: 
+| run | step | back | next | env | detail | detail --timeline | detail --last | detail --memory | exit |
 """)
 
     while True:
         try:
             cmd = input(">>> ").strip()
 
-            # ---------------- RUN (RELOAD FILE) ----------------
+            # ---------------- EXECUTION ----------------
 
             if cmd == "run":
-                interp = load_program(file)  
                 interp.run()
-                print("✅ Program executed (fresh run)")
-
-            # ---------------- DEBUG ----------------
+                print("✅ Program executed")
 
             elif cmd == "step":
                 interp.step()
@@ -62,7 +43,7 @@ Commands:
             elif cmd == "env":
                 print("ENV:", interp.env)
 
-            # ---------------- DETAIL ----------------
+            # ---------------- DETAIL COMMANDS ----------------
 
             elif cmd == "detail":
                 info = interp.state.info()

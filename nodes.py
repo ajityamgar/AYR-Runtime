@@ -97,3 +97,25 @@ class FunctionCallNode:
     name: str
     args: List[Any]
     line: int
+
+@dataclass
+class ForNode:
+    iterable: any
+    var_name: str
+    body: list
+    line: int
+
+@dataclass
+class ListNode:
+    elements: list
+    line: int
+
+@dataclass
+class TupleNode:
+    elements: list
+    line: int
+
+@dataclass
+class DictNode:
+    pairs: list 
+    line: int

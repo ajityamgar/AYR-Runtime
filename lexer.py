@@ -17,14 +17,15 @@ KEYWORDS = {
     "ya", "aur", "nahi",
     "sach", "jhoot",
     "band", "chalu",
-    "none",
+    "none", "har",
+    "main"
 }
 
 OPERATORS = {
     "+", "-", "*", "/", "%",
     "=", "==", "!=", "<", ">", "<=", ">=",
-    "&&", "||", "!",
-    "(", ")", ","
+    "&&", "||", "!", "++", "--",
+    "(", ")", ",", "[", "]", "{", "}", ":"
 }
 
 @dataclass
@@ -129,7 +130,7 @@ class Lexer:
                 tokens.append(Token(TOKEN_STRING, val, self.pos, self.line))
                 continue
 
-            if self.current_char in "+-*/%=!<>&|(),":
+            if self.current_char in "+-*/%=!<>&|(),[]{}:":
                 tokens.append(self.make_operator())
                 continue
 

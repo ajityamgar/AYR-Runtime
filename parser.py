@@ -80,6 +80,9 @@ class Parser:
             if kw == "kaam":
                 return self.func_def()
 
+            if kw == "har":
+                return self.for_stmt()
+
             if kw == "wapas":
                 self.advance()
                 if self.current.type in (TOKEN_NEWLINE, TOKEN_DEDENT):
@@ -123,6 +126,28 @@ class Parser:
                 break
 
         return IfNode(cond, body, elif_blocks, else_body, start.line)
+
+
+    # ---------- FOR ----------
+    def for_stmt(self):
+        start = self.expect(TOKEN_KEYWORD, "har")
+
+        iterable = self.expr()
+
+        self.expect(TOKEN_KEYWORD, "main")
+
+        var_tok = self.expect(TOKEN_IDENTIFIER)
+
+        self.skip_nl()
+        body = self.block()
+
+        return ForNode(
+            iterable=iterable,
+            var_name=var_tok.value,
+            body=body,
+            line=start.line
+        )
+
 
     # ---------- WHILE ----------
     def while_stmt(self):
@@ -237,6 +262,7 @@ class Parser:
     def primary(self):
         tok = self.current
 
+        # ---------- LITERALS ----------
         if tok.type == TOKEN_NUMBER:
             self.advance()
             return NumberNode(tok.value, tok.line)
@@ -258,7 +284,61 @@ class Parser:
             if tok.value == "pucho":
                 self.advance()
                 return InputNode(tok.line)
+        
 
+        # ---------- LIST ----------
+        if tok.type == TOKEN_OPERATOR and tok.value == "[":
+            start = tok
+            self.advance()
+            elements = []
+
+            if not (self.current.type == TOKEN_OPERATOR and self.current.value == "]"):
+                elements.append(self.expr())
+                while self.current.type == TOKEN_OPERATOR and self.current.value == ",":
+                    self.advance()
+                    elements.append(self.expr())
+
+            self.expect(TOKEN_OPERATOR, "]")
+            return ListNode(elements, start.line)
+
+        # ---------- TUPLE ----------
+        if tok.type == TOKEN_OPERATOR and tok.value == "(":
+            start = tok
+            self.advance()
+            elements = []
+
+            if not (self.current.type == TOKEN_OPERATOR and self.current.value == ")"):
+                elements.append(self.expr())
+                while self.current.type == TOKEN_OPERATOR and self.current.value == ",":
+                    self.advance()
+                    elements.append(self.expr())
+
+            self.expect(TOKEN_OPERATOR, ")")
+            return TupleNode(elements, start.line)
+
+        # ---------- DICTIONARY ----------
+        if tok.type == TOKEN_OPERATOR and tok.value == "{":
+            start = tok
+            self.advance()
+            pairs = []
+
+            if not (self.current.type == TOKEN_OPERATOR and self.current.value == "}"):
+                key = self.expr()
+                self.expect(TOKEN_OPERATOR, ":")
+                value = self.expr()
+                pairs.append((key, value))
+
+                while self.current.type == TOKEN_OPERATOR and self.current.value == ",":
+                    self.advance()
+                    key = self.expr()
+                    self.expect(TOKEN_OPERATOR, ":")
+                    value = self.expr()
+                    pairs.append((key, value))
+
+            self.expect(TOKEN_OPERATOR, "}")
+            return DictNode(pairs, start.line)
+
+        # ---------- VARIABLE / FUNCTION CALL ----------
         if tok.type == TOKEN_IDENTIFIER:
             name_tok = tok
             self.advance()

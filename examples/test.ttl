@@ -1,6 +1,2 @@
-dikhao "Expression Error Testing"
-
-salary = pucho
-dikhao salary
-agar salary > 233.00
-    dikhao "nice"
+nums = [10, 20, 30]
+dikhao nums[0]
