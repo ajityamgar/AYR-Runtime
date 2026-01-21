@@ -1,4 +1,4 @@
-x = pucho
-jabtak x <= 5
+x = 1
+jabtak x < 5
     dikhao x
     x = x + 1

@@ -1,6 +1,20 @@
+// src/components/Controls.jsx
 import React from "react";
 
-export default function Header({ run, debug, step, back, next }) {
+export default function Controls({
+  run,
+  debug,
+
+  // ✅ debug workflow buttons
+  rerunDebug,
+  back,
+  next,
+
+  // ✅ mode controls which buttons show
+  mode,
+}) {
+  const isDebug = mode === "debug";
+
   return (
     <div
       style={{
@@ -34,10 +48,15 @@ export default function Header({ run, debug, step, back, next }) {
 
       {/* RIGHT */}
       <div style={{ display: "flex", gap: 6 }}>
-        <button onClick={debug}>🐞 Debug</button>
-        <button onClick={step}>⏭ Step</button>
-        <button onClick={back}>⬅ Back</button>
-        <button onClick={next}>➡ Next</button>
+        {!isDebug && <button onClick={debug}>🐞 Debug</button>}
+
+        {isDebug && (
+          <>
+            <button onClick={rerunDebug}>🔁 Re-run</button>
+            <button onClick={back}>⬅ Back</button>
+            <button onClick={next}>➡ Next</button>
+          </>
+        )}
       </div>
     </div>
   );

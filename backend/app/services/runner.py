@@ -5,7 +5,28 @@ from app.runtime.interpreter import Interpreter, ExpressionError, InputRequest
 from app.services.session import session_manager
 
 
+def _make_problem(kind: str, title: str, message: str, line=None, expression=None):
+    return {
+        "kind": kind,             # "error" | "warning" | "bug"
+        "title": title,           # UI title line
+        "message": message,       # main message
+        "line": line,             # number or None
+        "expression": expression  # expression string or None
+    }
+
+
 def run_code(code: str):
+    """
+    NORMAL RUN MODE:
+    - Executes till end
+    - Collects ALL errors/warnings/bugs
+    - Returns summary + problems list for frontend Problems tab
+    """
+    problems = []
+    errors = []
+    warnings = []
+    bugs = []
+
     try:
         tokens = Lexer(code).tokenize()
         program = Parser(tokens).parse()
@@ -13,65 +34,164 @@ def run_code(code: str):
         interp = Interpreter()
         interp.load(program)
 
-        try:
-            while interp.pc < len(program.statements):
-                interp.step()
+        # store session (can help later for debug)
+        sid = str(uuid.uuid4())
+        session_manager.store(sid, interp)
 
-            # ✅ Phase-1 destructor call at end (runner uses step loop)
-            if hasattr(interp, "_run_destructors"):
-                interp._run_destructors()
+        # ✅ run all statements
+        while True:
+            try:
+                cont = interp.step()
+                if not cont:
+                    break
 
-            return {
-                "success": True,
-                "output": interp.output if hasattr(interp, "output") else [],
-                "warnings": interp.warnings if hasattr(interp, "warnings") else [],
-                "env": interp.env if hasattr(interp, "env") else {},
-                "trace": interp.trace_log if hasattr(interp, "trace_log") else [],
-                "detail": interp.state.info() if hasattr(interp, "state") else {},
-                "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0
-            }
+            except InputRequest as inp:
+                # input required => stop normal run and return
+                p = _make_problem(
+                    kind="error",
+                    title=f"Input Required (Line {inp.line}):",
+                    message="Program ko input chahiye.",
+                    line=inp.line,
+                    expression=getattr(interp, "last_input_var", None),
+                )
+                problems.append(p)
+                errors.append(p)
 
-        except InputRequest as inp:
-            session_id = str(uuid.uuid4())
-            session_manager.store(session_id, interp)
+                return {
+                    "success": False,
+                    "session_id": sid,
+                    "needs_input": True,
+                    "var": getattr(interp, "last_input_var", None),
+                    "line": inp.line,
+                    "output": interp.output,
 
-            return {
-                "success": False,
-                "need_input": True,
-                "session_id": session_id,
-                "var": getattr(interp, "last_input_var", None),
-                "line": inp.line,
-                "message": "Program is waiting for input",
-                "output": interp.output if hasattr(interp, "output") else [],
-                "warnings": interp.warnings if hasattr(interp, "warnings") else [],
-                "env": interp.env if hasattr(interp, "env") else {},
-                "trace": interp.trace_log if hasattr(interp, "trace_log") else [],
-                "detail": interp.state.info() if hasattr(interp, "state") else {},
-                "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0
-            }
+                    "problems": problems,
+                    "errors": errors,
+                    "warnings": warnings,
+                    "bugs": bugs,
 
-        except ExpressionError as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "line": e.line,
-                "output": interp.output if hasattr(interp, "output") else [],
-                "warnings": interp.warnings if hasattr(interp, "warnings") else [],
-                "env": interp.env if hasattr(interp, "env") else {},
-                "trace": interp.trace_log if hasattr(interp, "trace_log") else [],
-                "detail": interp.state.info() if hasattr(interp, "state") else {},
-                "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0
-            }
+                    "summary": {
+                        "total_errors": len(errors),
+                        "total_warnings": len(warnings),
+                        "total_bugs": len(bugs),
+                        "total_problems": len(problems),
+                    },
+
+                    "env": interp.env,
+                    "trace": interp.trace_log,
+                    "detail": { "state_info": interp.state.info() if hasattr(interp, "state") else None},
+                    "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0
+                }
+
+            except ExpressionError as e:
+                # ✅ ExpressionError => show like screenshot
+                line = getattr(e, "line", None)
+                expr = getattr(e, "expr_text", None)
+
+                title = f"Expression Error (Line {line}):" if line else "Expression Error:"
+                msg = str(e)
+
+                p = _make_problem(
+                    kind="error",
+                    title=title,
+                    message=msg,
+                    line=line,
+                    expression=expr
+                )
+
+                problems.append(p)
+                errors.append(p)
+
+                # ✅ continue execution (Normal Run rule)
+                interp.pc += 1
+                if interp.program and interp.pc >= len(interp.program.statements):
+                    break
+
+            except Exception as e:
+                # any unknown runtime error
+                p = _make_problem(
+                    kind="error",
+                    title="Runtime Error:",
+                    message=str(e),
+                    line=None,
+                    expression=None
+                )
+                problems.append(p)
+                errors.append(p)
+
+                # ✅ continue
+                interp.pc += 1
+                if not interp.program or interp.pc >= len(interp.program.statements):
+                    break
+
+        # ✅ interpreter warnings merge (if any)
+        if hasattr(interp, "warnings"):
+            for w in interp.warnings:
+                p = _make_problem(
+                    kind="warning",
+                    title="Warning:",
+                    message=str(w),
+                    line=None,
+                    expression=None
+                )
+                problems.append(p)
+                warnings.append(p)
+
+        return {
+            "success": (len(errors) == 0),
+
+            "session_id": sid,
+            "output": interp.output,
+
+            # ✅ main UI array
+            "problems": problems,
+
+            # optional separated arrays
+            "errors": errors,
+            "warnings": warnings,
+            "bugs": bugs,
+
+            "summary": {
+                "total_errors": len(errors),
+                "total_warnings": len(warnings),
+                "total_bugs": len(bugs),
+                "total_problems": len(problems),
+            },
+
+            "env": interp.env,
+            "trace": interp.trace_log,
+            "detail": { "state_info": interp.state.info() if hasattr(interp, "state") else None },
+            "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0
+        }
 
     except Exception as e:
+        p = _make_problem(
+            kind="error",
+            title="Compiler/Parse Error:",
+            message=str(e),
+            line=None,
+            expression=None
+        )
+
         return {
             "success": False,
-            "error": str(e),
-            "line": None,
+            "session_id": None,
             "output": [],
+
+            "problems": [p],
+            "errors": [p],
             "warnings": [],
+            "bugs": [],
+
+            "summary": {
+                "total_errors": 1,
+                "total_warnings": 0,
+                "total_bugs": 0,
+                "total_problems": 1
+            },
+
             "env": {},
             "trace": [],
-            "detail": {},
+            "detail": { "state_info": interp.state.info() if hasattr(interp, "state") else None },
             "memory_kb": 0
         }

@@ -1,4 +1,5 @@
 import re
+import copy
 from dataclasses import dataclass
 from app.runtime.nodes import *
 from app.runtime.state_manager import StateManager
@@ -183,6 +184,29 @@ class Interpreter:
         self.classes = {}
         self._objects_created = []
 
+        # ✅ NEW: timeline/trace counter
+        self._trace_i = 0
+
+
+    # ✅ NEW: trace snapshot helper
+    def _trace_snapshot(self, line=None):
+        """
+        Stores timeline snapshot like:
+        { i: 0, line: None, env: {} }
+        { i: 1, line: 2, env: {x:1} }
+        """
+        try:
+            env_copy = copy.deepcopy(self.env)
+        except Exception:
+            env_copy = dict(self.env)
+
+        self.trace_log.append({
+            "i": self._trace_i,
+            "line": line,
+            "env": env_copy
+        })
+        self._trace_i += 1
+
 
     # ---------- load program ----------
     def load(self, program):
@@ -199,8 +223,13 @@ class Interpreter:
         self.classes = {}
         self._objects_created = []
 
+        self._trace_i = 0
+
         self.state.reset()
         self.state.save(self.env)
+
+        # ✅ FIRST timeline snapshot: [0] {}
+        self._trace_snapshot(line=None)
 
     # ---------- run whole program ----------
     def run(self):
@@ -210,6 +239,11 @@ class Interpreter:
 
         self.state.reset()
         self.state.save(self.env)
+
+        # ✅ ensure trace always starts with {} even in run()
+        self.trace_log = []
+        self._trace_i = 0
+        self._trace_snapshot(line=None)
 
         while self.pc < len(self.program.statements):
             self.step()
@@ -229,7 +263,9 @@ class Interpreter:
             return False
 
         stmt = self.program.statements[self.pc]
-        self.trace_log.append( f"line {stmt.line} | {type(stmt).__name__}" )
+
+        # ✅ keep old style trace (not removed), but now timeline objects are main
+        # self.trace_log.append( f"line {stmt.line} | {type(stmt).__name__}" )
 
         self.execute(stmt)
         self.state.save(self.env)
@@ -318,6 +354,10 @@ class Interpreter:
             for m in node.methods:
                 methods_map[m.name] = m
             self.classes[node.name] = AYRClass(node.name, methods_map)
+
+            # ✅ snapshot after effect
+            if hasattr(node, "line"):
+                self._trace_snapshot(line=node.line)
             return
 
         # ---------- assignment ----------
@@ -327,7 +367,6 @@ class Interpreter:
             except InputRequest as inp:
                 self.last_input_var = node.name
                 raise InputRequest(inp.line)
-
 
         # ✅ MEMBER ASSIGNMENT (p.age = 21)
         elif isinstance(node, MemberAssignNode):
@@ -339,7 +378,6 @@ class Interpreter:
                     node.expr_text
                 )
             obj.fields[node.member] = self.eval(node.value)
-
 
         elif isinstance(node, MultiAssignNode):
             raw = input(">> ").split()
@@ -365,6 +403,9 @@ class Interpreter:
                 for cond, body in node.elif_blocks:
                     if self.eval(cond):
                         self.exec_block(body)
+                        # ✅ snapshot after if
+                        if hasattr(node, "line"):
+                            self._trace_snapshot(line=node.line)
                         return
                 if node.else_body:
                     self.exec_block(node.else_body)
@@ -439,11 +480,19 @@ class Interpreter:
                         node.expr_text
                     )
                 collection[index] = value
+
+                # ✅ snapshot after assignment
+                if hasattr(node, "line"):
+                    self._trace_snapshot(line=node.line)
                 return
 
             # ---------- DICTIONARY ----------
             if isinstance(collection, dict):
                 collection[index] = value
+
+                # ✅ snapshot after assignment
+                if hasattr(node, "line"):
+                    self._trace_snapshot(line=node.line)
                 return
 
             raise ExpressionError(
@@ -461,6 +510,9 @@ class Interpreter:
                 )
             raise ReturnSignal(self.eval(node.value) if node.value else None)
 
+        # ✅ ONLY AFTER EXECUTION snapshot (no duplicates)
+        if hasattr(node, "line"):
+            self._trace_snapshot(line=node.line)
     # ---------- execute block ----------
     def exec_block(self, stmts):
         for s in stmts:

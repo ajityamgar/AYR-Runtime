@@ -6,10 +6,12 @@ export default function InspectorTabs({
   problemCount,
   hasOutput,
 }) {
+  const safeProblemCount = Number(problemCount || 0);
+
   const tabs = [
-    { id: "problems", label: "Problems", badge: problemCount },
+    { id: "problems", label: "Problems", badge: safeProblemCount },
     { id: "output", label: "Output", glow: hasOutput },
-    { id: "debug", label: "Debug" },
+    { id: "debug", label: "ENV" }, // ✅ changed name
     { id: "timeline", label: "Timeline" },
     { id: "detail", label: "Detail" },
     { id: "memory", label: "Memory" },
