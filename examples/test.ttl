@@ -1,2 +1,0 @@
-nums = [10, 20, 30]
-dikhao nums[0]

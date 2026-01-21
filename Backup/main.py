@@ -8,6 +8,7 @@ def load_program(file_path):
     tokens = Lexer(code).tokenize()
     program = Parser(tokens).parse()
     interp = Interpreter()
+    interp.current_file = file_path  # debug trace ke liye
     interp.load(program)
     return interp
 
@@ -27,10 +28,11 @@ Commands:
  back                → previous state
  next                → forward state
  env                 → current variables
- detail              → state summary
+detail              → state summary
  detail --timeline   → full execution timeline
  detail --last       → last state snapshot
  detail --memory     → memory usage
+ debug               → execution trace (functions / loops)
  exit                → quit runtime
 """)
 
@@ -39,13 +41,17 @@ Commands:
             cmd = input(">>> ").strip()
 
             # ---------------- RUN (RELOAD FILE) ----------------
-
             if cmd == "run":
-                interp = load_program(file)  
+                print("▶️ RUN")
+                print("Program execution started...\n")
+                interp = load_program(file)
                 interp.run()
-                print("✅ Program executed (fresh run)")
+                if not interp.paused:
+                    print("\n✅ Program executed successfully")
 
             # ---------------- DEBUG ----------------
+            elif cmd == "debug":
+                interp.debug()
 
             elif cmd == "step":
                 interp.step()
@@ -63,7 +69,6 @@ Commands:
                 print("ENV:", interp.env)
 
             # ---------------- DETAIL ----------------
-
             elif cmd == "detail":
                 info = interp.state.info()
                 print("📊 STATE INFO")
@@ -86,7 +91,6 @@ Commands:
                 print(f"{interp.state.memory_kb()} KB")
 
             # ---------------- EXIT ----------------
-
             elif cmd == "exit":
                 print("Bye 👋")
                 break
@@ -95,6 +99,7 @@ Commands:
                 print("❓ Unknown command")
 
         except ExpressionError as e:
+            # Error already printed by interpreter (pause + message)
             print(e)
 
         except Exception as e:

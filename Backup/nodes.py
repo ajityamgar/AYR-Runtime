@@ -99,13 +99,6 @@ class FunctionCallNode:
     line: int
 
 @dataclass
-class ForNode:
-    iterable: any
-    var_name: str
-    body: list
-    line: int
-
-@dataclass
 class ListNode:
     elements: list
     line: int
@@ -119,3 +112,33 @@ class TupleNode:
 class DictNode:
     pairs: list 
     line: int
+
+@dataclass
+class IndexAccessNode:
+    collection: Any
+    index: Any
+    line: int
+    expr_text: str
+
+@dataclass
+class ForNode:
+    iterable: any
+    var_name: str
+    body: list
+    line: int
+    index_name: Optional[str] = None
+
+@dataclass
+class MultiAssignNode:
+    names: List[str]
+    value: Any
+    line: int
+
+@dataclass
+class IndexAssignNode:
+    collection: any
+    index: any
+    value: any
+    line: int
+    expr_text: str
+
