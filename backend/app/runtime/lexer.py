@@ -67,7 +67,6 @@ class Lexer:
 
         while self.current_char:
             if at_line_start:
-                # ✅ count spaces but do not consume immediately
                 tmp_pos = self.pos
                 spaces = 0
 
@@ -75,14 +74,11 @@ class Lexer:
                     spaces += 1
                     tmp_pos += 1
 
-                # ✅ if the line is blank (only spaces + newline), DO NOT emit INDENT/DEDENT
                 if tmp_pos < len(self.text) and self.text[tmp_pos] == "\n":
-                    # consume spaces normally, NEWLINE will be handled below
                     while self.current_char == " ":
                         self.advance()
                     at_line_start = False
                 else:
-                    # consume spaces for real indentation
                     while self.current_char == " ":
                         self.advance()
 

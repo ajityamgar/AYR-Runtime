@@ -1,10 +1,6 @@
 from pydantic import BaseModel # pyright: ignore[reportMissingImports]
 from typing import Any, List, Optional
 
-
-# ===============================
-# NORMAL RUN RESPONSE
-# ===============================
 class RunResponse(BaseModel):
     success: bool
     output: List[Any] = []
@@ -18,10 +14,6 @@ class RunErrorResponse(BaseModel):
     output: List[Any] = []
     warnings: List[str] = []
 
-
-# ===============================
-# DEBUG RESPONSE (UNCHANGED)
-# ===============================
 class DebugResponse(BaseModel):
     session_id: str
     env: dict

@@ -4,7 +4,6 @@ import Timeline from "./Timeline";
 import EnvViewer from "./EnvViewer";
 
 export default function InspectorPanel({ active, runtime }) {
-  // ✅ OUTPUT TAB
   if (active === "output") {
     return (
       <Output
@@ -15,7 +14,6 @@ export default function InspectorPanel({ active, runtime }) {
     );
   }
 
-  // ✅ PROBLEMS TAB
   if (active === "problems") {
     const problems = Array.isArray(runtime.problems) ? runtime.problems : [];
 
@@ -27,19 +25,16 @@ export default function InspectorPanel({ active, runtime }) {
     const hasProblems =
       problems.length > 0 || fallbackHasError || fallbackWarnings.length > 0;
 
-    // ✅ helper to clean duplicate message text
     const normalizeProblemMessage = (p) => {
       const raw = String(p?.message || "Unknown problem");
       const title = String(p?.title || "").trim();
 
       let msg = raw;
 
-      // remove duplicate title prefix if present in message
       if (title && msg.startsWith(title)) {
         msg = msg.slice(title.length).trim();
       }
 
-      // remove "Expression: xxx" from message (we show it separately)
       const expr = p?.expression ? String(p.expression) : null;
       if (expr) {
         const exprText = `Expression: ${expr}`;
@@ -48,7 +43,6 @@ export default function InspectorPanel({ active, runtime }) {
         }
       }
 
-      // remove extra leading ":" if leftover
       if (msg.startsWith(":")) msg = msg.slice(1).trim();
 
       return msg;
@@ -56,7 +50,6 @@ export default function InspectorPanel({ active, runtime }) {
 
     return (
       <>
-        {/* ✅ NEW unified problems */}
         {problems.length > 0 &&
           problems.map((p, i) => {
             const kind = p.kind || "error";
@@ -73,7 +66,6 @@ export default function InspectorPanel({ active, runtime }) {
                 ? { background: "#3a1d1d", color: "#ffadad" }
                 : { background: "#3a1d1d", color: "#ff6b6b" };
 
-            // ✅ Expression Error detection (for UI formatting)
             const isExpressionError =
               typeof title === "string" && title.startsWith("Expression Error");
 
@@ -95,14 +87,12 @@ export default function InspectorPanel({ active, runtime }) {
                   </div>
                 ) : null}
 
-                {/* ✅ Expression on new line */}
                 {expression ? (
                   <div style={{ marginTop: 6, paddingLeft: 14, opacity: 0.95 }}>
                     Expression: {String(expression)}
                   </div>
                 ) : null}
 
-                {/* ✅ Hide "Line: X" for Expression Error (because title already has line) */}
                 {!isExpressionError &&
                 line !== undefined &&
                 line !== null ? (
@@ -114,7 +104,6 @@ export default function InspectorPanel({ active, runtime }) {
             );
           })}
 
-        {/* ✅ OLD fallback: runtime.error */}
         {problems.length === 0 && runtime.error && <ErrorBox error={runtime.error} />}
 
         {problems.length === 0 &&
@@ -140,17 +129,14 @@ export default function InspectorPanel({ active, runtime }) {
     );
   }
 
-  // ✅ TIMELINE TAB
   if (active === "timeline") {
     return <Timeline trace={runtime.trace || []} onJump={runtime.jumpToLine} />;
   }
 
-  // ✅ VARIABLES TAB
   if (active === "variables") {
     return <EnvViewer env={runtime.env || {}} />;
   }
 
-   // ✅ DETAIL TAB
   if (active === "detail") {
     const detail = runtime.detail || {};
     const stateInfo = detail.state_info || null;
@@ -186,7 +172,6 @@ export default function InspectorPanel({ active, runtime }) {
         <div style={{ color: "#4FC1FF", fontWeight: "bold" }}>DETAIL</div>
         <hr style={{ borderColor: "#333" }} />
 
-        {/* ✅ formatted STATE INFO */}
         {showStateInfo && (
           <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
             <div style={{ fontWeight: "bold" }}>📊 STATE INFO</div>
@@ -197,7 +182,6 @@ export default function InspectorPanel({ active, runtime }) {
           </div>
         )}
 
-        {/* ✅ fallback JSON */}
         {!showStateInfo && (
           <pre style={{ whiteSpace: "pre-wrap", margin: 0 }}>
             {JSON.stringify(detail, null, 2)}
@@ -207,7 +191,6 @@ export default function InspectorPanel({ active, runtime }) {
     );
   }
 
-  // ✅ MEMORY TAB
   if (active === "memory") {
     return (
       <div style={{ padding: 12, color: "#d4d4d4", fontFamily: "monospace" }}>
@@ -218,7 +201,6 @@ export default function InspectorPanel({ active, runtime }) {
     );
   }
 
-  // ✅ DEBUG TAB
   if (active === "debug") {
     return (
       <div style={{ padding: 12, color: "#aaa", fontFamily: "monospace" }}>

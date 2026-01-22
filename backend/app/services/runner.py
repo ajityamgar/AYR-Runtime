@@ -29,11 +29,9 @@ def run_code(code: str):
         interp = Interpreter()
         interp.load(program)
 
-        # store session (can help later for debug)
         sid = str(uuid.uuid4())
         session_manager.store(sid, interp)
 
-        # ✅ run all statements
         while True:
             try:
                 cont = interp.step()
@@ -41,7 +39,6 @@ def run_code(code: str):
                     break
 
             except InputRequest as inp:
-                # input required => stop normal run and return
                 p = _make_problem(
                     kind="error",
                     title=f"Input Required (Line {inp.line}):",
@@ -78,7 +75,6 @@ def run_code(code: str):
                 }
 
             except ExpressionError as e:
-                # ✅ ExpressionError => show like screenshot
                 line = getattr(e, "line", None)
                 expr = getattr(e, "expr_text", None)
 
@@ -96,13 +92,11 @@ def run_code(code: str):
                 problems.append(p)
                 errors.append(p)
 
-                # ✅ continue execution (Normal Run rule)
                 interp.pc += 1
                 if interp.program and interp.pc >= len(interp.program.statements):
                     break
 
             except Exception as e:
-                # any unknown runtime error
                 p = _make_problem(
                     kind="error",
                     title="Runtime Error:",
@@ -113,7 +107,6 @@ def run_code(code: str):
                 problems.append(p)
                 errors.append(p)
 
-                # ✅ continue
                 interp.pc += 1
                 if not interp.program or interp.pc >= len(interp.program.statements):
                     break
@@ -126,7 +119,6 @@ def run_code(code: str):
                     )
 
         
-        # ✅ interpreter warnings merge (if any)
         if hasattr(interp, "warnings"):
             for w in interp.warnings:
                 p = _make_problem(
@@ -145,10 +137,8 @@ def run_code(code: str):
             "session_id": sid,
             "output": interp.output,
 
-            # ✅ main UI array
             "problems": problems,
 
-            # optional separated arrays
             "errors": errors,
             "warnings": warnings,
             "bugs": bugs,

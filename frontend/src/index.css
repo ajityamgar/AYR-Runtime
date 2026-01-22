@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ---------- Base Theme ---------- */
 :root {
   color-scheme: dark;
 }
@@ -21,12 +20,10 @@ body {
     Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-/* Smooth UI */
 * {
   box-sizing: border-box;
 }
 
-/* Optional: nicer scrollbars (matches IDE vibe) */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

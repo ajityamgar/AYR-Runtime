@@ -6,8 +6,8 @@ function normalizeAYRCode(code) {
   if (typeof code !== "string") return "";
 
   return code
-    .replace(/\r\n/g, "\n") // windows -> unix newline
-    .replace(/\t/g, "    "); // tabs -> 4 spaces
+    .replace(/\r\n/g, "\n") 
+    .replace(/\t/g, "    ");
 }
 
 async function request(path, options = {}) {
@@ -18,7 +18,6 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  // ✅ safe json parsing
   let data = null;
   try {
     data = await res.json();
@@ -29,7 +28,6 @@ async function request(path, options = {}) {
     };
   }
 
-  // ✅ run/input/debug pe throw mat karo (we handle UI response)
   if (
     !res.ok &&
     !path.startsWith("/run") &&
@@ -43,7 +41,6 @@ async function request(path, options = {}) {
 }
 
 function normalizeRunResponse(data) {
-  // ✅ make sure frontend always gets these fields
   if (!data || typeof data !== "object") {
     return {
       success: false,
@@ -83,15 +80,11 @@ function normalizeRunResponse(data) {
           total_problems: problems.length,
         };
 
-  // ✅ support both keys:
   const needsInput = Boolean(data.needs_input || data.need_input);
-
   const memoryKB = typeof data.memory_kb === "number" ? data.memory_kb : 0;
 
   return {
     ...data,
-
-    // core
     output: Array.isArray(data.output) ? data.output : [],
     problems,
     errors,
@@ -102,11 +95,9 @@ function normalizeRunResponse(data) {
     trace: Array.isArray(data.trace) ? data.trace : [],
     detail: data.detail && typeof data.detail === "object" ? data.detail : {},
 
-    // memory mapping for UI
     memory_kb: memoryKB,
     memoryKB: memoryKB,
 
-    // input flags support
     needs_input: needsInput,
     need_input: needsInput,
   };
@@ -150,7 +141,6 @@ function normalizeDebugResponse(data) {
 }
 
 const api = {
-  // ✅ NORMAL RUN (Problems + Summary)
   run: async (code) => {
     const safeCode = normalizeAYRCode(code);
 
@@ -162,7 +152,6 @@ const api = {
     return normalizeRunResponse(res);
   },
 
-  // ✅ DEBUG START (Option A: debug_key based)
   debug: async (code, debugKey) => {
     const safeCode = normalizeAYRCode(code);
 
@@ -170,7 +159,7 @@ const api = {
       method: "POST",
       body: JSON.stringify({
         code: safeCode,
-        debug_key: debugKey, // ✅ important
+        debug_key: debugKey,
       }),
     });
 
@@ -178,7 +167,6 @@ const api = {
     return normalizeDebugResponse(res);
   },
 
-  // ✅ DEBUG: Run step-by-step internally until NEXT NEW error
   nextError: async (sessionId, debugKey) => {
     const res = await request(
       `/debug/rerunDebug?session_id=${sessionId}&debug_key=${debugKey}`,
@@ -190,7 +178,6 @@ const api = {
     return normalizeDebugResponse(res);
   },
 
-  // ✅ INPUT (Normal Run or Debug)
   input: async (sessionId, value) => {
     const res = await request("/input", {
       method: "POST",
@@ -199,18 +186,13 @@ const api = {
         value,
       }),
     });
-
-    // ✅ IMPORTANT: input response should also be normalized
     return normalizeRunResponse(res);
   },
 
-  // ✅ Old debug helpers (optional)
   step: async (sessionId) => {
     const res = await request(`/step?session_id=${sessionId}`, {
       method: "POST",
     });
-
-    // ✅ normalize as debug-style response
     return normalizeDebugResponse(res);
   },
 
@@ -218,8 +200,6 @@ const api = {
     const res = await request(`/back?session_id=${sessionId}`, {
       method: "POST",
     });
-
-    // ✅ normalize to avoid env/trace/detail missing in UI
     return normalizeDebugResponse(res);
   },
 
@@ -227,7 +207,6 @@ const api = {
     const res = await request(`/next?session_id=${sessionId}`, {
       method: "POST",
     });
-
     return normalizeDebugResponse(res);
   },
 
@@ -237,11 +216,8 @@ const api = {
 
   detail: async (sessionId) => {
     const res = await request(`/detail?session_id=${sessionId}`);
-    // ✅ keep same structure so UI can read easily
     return normalizeRunResponse(res);
   },
-
-  // ✅ helper
   getSessionId: () => SESSION_ID,
 };
 

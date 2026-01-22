@@ -1,23 +1,10 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-/* =========================================================
-   AYR Runtime - Home.jsx (9/10 UI)
-   ✅ Upgrades added:
-   1) Mouse spotlight glow (smooth)
-   2) Interactive tilt cards (Hero + Feature cards)
-   3) Animated gradient border glow
-   4) Floating particles (no library)
-   5) Better hero layout + trust badges
-   6) No alert() contact UX (loading + success/error)
-========================================================= */
-
-/* ----------------------------- Utils ----------------------------- */
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-/* ------------------------ Background Layers ---------------------- */
 const BackgroundFX = ({ mouseX, mouseY, active }) => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -42,7 +29,6 @@ const BackgroundFX = ({ mouseX, mouseY, active }) => {
   );
 };
 
-/* -------------------------- Particles --------------------------- */
 const Particles = () => {
   const dots = useMemo(() => {
     const count = 18;
@@ -86,7 +72,6 @@ const Particles = () => {
   );
 };
 
-/* ----------------------------- UI Bits --------------------------- */
 const Badge = ({ children }) => (
   <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
     {children}
@@ -102,7 +87,6 @@ const StatMini = ({ icon, label }) => {
   );
 };
 
-/* ----------------------- Tilt Wrapper (Card) --------------------- */
 const TiltCard = ({ children, className = "" }) => {
   const ref = useRef(null);
   const [style, setStyle] = useState({
@@ -144,7 +128,6 @@ const TiltCard = ({ children, className = "" }) => {
   );
 };
 
-/* -------------------------- Feature Card ------------------------- */
 const FeatureCard = ({ title, desc, icon = "⚡" }) => {
   return (
     <TiltCard>
@@ -168,7 +151,6 @@ const FeatureCard = ({ title, desc, icon = "⚡" }) => {
   );
 };
 
-/* -------------------------- Mini IDE Preview --------------------- */
 const MiniIDEPreview = ({ code, output, active = "run" }) => {
   return (
     <TiltCard className="relative">
@@ -284,16 +266,11 @@ const MiniIDEPreview = ({ code, output, active = "run" }) => {
   );
 };
 
-/* =========================================================
-   HOME PAGE
-========================================================= */
 export default function Home() {
   const navigate = useNavigate();
 
-  // step preview
   const [howStep, setHowStep] = useState(1);
 
-  // contact
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -306,7 +283,6 @@ export default function Home() {
     msg: "",
   });
 
-  // mouse spotlight
   const wrapRef = useRef(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [mouseActive, setMouseActive] = useState(false);

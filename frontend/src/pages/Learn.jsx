@@ -1,4 +1,3 @@
-// src/pages/learn.jsx
 import React, { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -14,7 +13,6 @@ function encodeCodeToUrl(code) {
   }
 }
 
-/* ---------------- Background FX ---------------- */
 const BackgroundFX = ({ mouseX, mouseY, active }) => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -84,7 +82,6 @@ const Particles = () => {
   );
 };
 
-/* ---------------- UI Components ---------------- */
 const SmallTag = ({ children }) => {
   return (
     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
@@ -269,13 +266,9 @@ const TopicNav = ({
   );
 };
 
-/* =========================================================
-   PAGE
-========================================================= */
 export default function Learn() {
   const navigate = useNavigate();
 
-  // mouse spotlight
   const wrapRef = useRef(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [mouseActive, setMouseActive] = useState(false);
@@ -287,11 +280,9 @@ export default function Learn() {
     setMouse({ x: e.clientX - r.left, y: e.clientY - r.top });
   };
 
-  // topic state
   const [activeId, setActiveId] = useState("intro");
   const [query, setQuery] = useState("");
 
-  // done + copied state
   const [doneMap, setDoneMap] = useState({});
   const [copiedId, setCopiedId] = useState("");
 
@@ -302,7 +293,6 @@ export default function Learn() {
       setDoneMap((p) => ({ ...p, [topicId]: true }));
       setTimeout(() => setCopiedId(""), 900);
     } catch {
-      // no alert
     }
   };
 
@@ -315,9 +305,6 @@ export default function Learn() {
   const topics = useMemo(() => {
     const T = [];
 
-    // =====================================================
-    // 0) INTRO
-    // =====================================================
     T.push({
       id: "intro",
       title: "0 → 100% AYR Runtime (Start Here)",
@@ -363,9 +350,6 @@ export default function Learn() {
       ),
     });
 
-    // =====================================================
-    // 1) HELLO WORLD
-    // =====================================================
     const hello = `dikhao "Hello AYR Runtime!"`;
     T.push({
       id: "hello",
@@ -390,9 +374,6 @@ export default function Learn() {
       ),
     });
 
-    // =====================================================
-    // 2) VARIABLES + NUMBERS
-    // =====================================================
     const vars = `x = 10
 y = 5
 
@@ -424,9 +405,6 @@ dikhao x * y`;
       ),
     });
 
-    // =====================================================
-    // 3) STRINGS + INTERPOLATION
-    // =====================================================
     const strings = `name = "Ajit"
 age = 20
 
@@ -454,9 +432,6 @@ Age  = 20`}
       ),
     });
 
-    // =====================================================
-    // 4) INPUT
-    // =====================================================
     const input1 = `dikhao "Enter your name:"
 name = pucho
 
@@ -484,9 +459,6 @@ Hello (your name)`}
       ),
     });
 
-    // =====================================================
-    // 5) CONDITIONS
-    // =====================================================
     const ifElse = `x = 10
 
 agar x > 5
@@ -514,9 +486,6 @@ warna
       ),
     });
 
-    // =====================================================
-    // 6) LOGIC
-    // =====================================================
     const logic = `a = true
 b = false
 
@@ -545,9 +514,6 @@ warna
       ),
     });
 
-    // =====================================================
-    // 7) WHILE LOOP
-    // =====================================================
     const whileLoop = `i = 1
 
 jabtak i <= 5
@@ -578,9 +544,6 @@ jabtak i <= 5
       ),
     });
 
-    // =====================================================
-    // 8) FOR LOOP
-    // =====================================================
     const forLoop = `nums = [10, 20, 30, 40]
 
 har nums main x
@@ -626,9 +589,6 @@ Index 2 => 30`}
       ),
     });
 
-    // =====================================================
-    // 9) BREAK + CONTINUE
-    // =====================================================
     const breakContinue = `i = 0
 
 jabtak i < 10
@@ -663,9 +623,6 @@ jabtak i < 10
       ),
     });
 
-    // =====================================================
-    // 10) FUNCTIONS
-    // =====================================================
     const fn1 = `kaam add(a, b)
     wapas a + b
 
@@ -707,9 +664,6 @@ greet("Boss")`;
       ),
     });
 
-    // =====================================================
-    // 11) LISTS
-    // =====================================================
     const listIndex = `a = [5, 10, 15]
 
 dikhao a[0]
@@ -739,9 +693,6 @@ dikhao a[1]`;
       ),
     });
 
-    // =====================================================
-    // 12) OOP
-    // =====================================================
     const oop = `class Person:
     kaam __init__(self, name, age):
         self.name = name
@@ -797,9 +748,6 @@ Mahindra`}
       ),
     });
 
-    // =====================================================
-    // 13) PLATFORM GUIDE
-    // =====================================================
     T.push({
       id: "platform",
       title: "13) Platform Guide (Web IDE)",
@@ -853,9 +801,6 @@ Mahindra`}
       ),
     });
 
-    // =====================================================
-    // 14) DEBUGGING GUIDE
-    // =====================================================
     const debugExample = `x = 10
 y = 0
 
@@ -910,9 +855,6 @@ dikhao a[10]`;
       ),
     });
 
-    // =====================================================
-    // 15) PRACTICE
-    // =====================================================
     const practice1 = `# Task: two numbers input lo aur sum print karo
 dikhao "Enter two numbers:"
 a, b = pucho

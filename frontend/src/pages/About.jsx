@@ -1,4 +1,3 @@
-// src/pages/about.jsx
 import React, { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -6,7 +5,6 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-/* ---------------- Background FX ---------------- */
 const BackgroundFX = ({ mouseX, mouseY, active }) => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -76,7 +74,6 @@ const Particles = () => {
   );
 };
 
-/* ---------------- UI Helpers ---------------- */
 const Badge = ({ children }) => (
   <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
     {children}
@@ -89,7 +86,6 @@ const Bullet = ({ children }) => (
   </li>
 );
 
-/* ---------------- Tilt Wrapper ---------------- */
 const TiltCard = ({ children, className = "" }) => {
   const ref = useRef(null);
   const [style, setStyle] = useState({
@@ -132,7 +128,6 @@ const TiltCard = ({ children, className = "" }) => {
   );
 };
 
-/* ---------------- Premium Card ---------------- */
 const PremiumCard = ({ icon, title, desc, children }) => {
   return (
     <TiltCard>
@@ -182,7 +177,6 @@ const StatCard = ({ label, value }) => {
   );
 };
 
-/* ---------------- Feature Pill ---------------- */
 const Pill = ({ icon, title, desc }) => {
   return (
     <TiltCard>
@@ -199,13 +193,9 @@ const Pill = ({ icon, title, desc }) => {
   );
 };
 
-/* =========================================================
-   ABOUT PAGE (10/10)
-========================================================= */
 export default function About() {
   const navigate = useNavigate();
 
-  // Mouse spotlight
   const wrapRef = useRef(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [mouseActive, setMouseActive] = useState(false);

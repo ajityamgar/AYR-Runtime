@@ -453,7 +453,6 @@ class Interpreter:
                 )
             return self.env[node.name]
 
-        # ✅ MEMBER ACCESS (dikhao p.name)
         if isinstance(node, MemberAccessNode):
             obj = self.eval(node.obj)
             if not isinstance(obj, AYRObject):
@@ -681,7 +680,6 @@ class Interpreter:
     def _execute_method(self, obj: AYRObject, method_node: MethodDefNode, user_args, call_line: int):
         local_env = self.env.copy()
 
-        # first param name can be self/this/current/check/etc.
         self_param = method_node.params[0]
         local_env[self_param] = obj
 

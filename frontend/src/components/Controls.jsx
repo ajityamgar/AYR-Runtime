@@ -1,19 +1,15 @@
-// src/components/Controls.jsx
 import React from "react";
 
 export default function Controls({
   run,
   debug,
 
-  // ✅ debug workflow buttons
   rerunDebug,
   back,
   next,
 
-  // ✅ mode controls which buttons show
   mode,
 
-  // ✅ NEW
   onBrandClick,
 }) {
   const isDebug = mode === "debug";

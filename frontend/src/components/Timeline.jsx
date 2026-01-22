@@ -13,7 +13,6 @@ export default function Timeline({ trace, onJump }) {
       )}
 
       {items.map((t, idx) => {
-        // ✅ support both string trace + object trace
         if (typeof t === "string") {
           return (
             <div

@@ -17,7 +17,6 @@ const DEFAULT_BOTTOM_HEIGHT = 220;
 export default function Playground() {
   const runtime = useRuntime();
   const navigate = useNavigate();
-  // ---------- FILES ----------
   const [files, setFiles] = useState([
     { id: "main", name: "main.ayr", code: "" },
   ]);
@@ -27,19 +26,16 @@ export default function Playground() {
     return files.find((f) => f.id === activeFileId) || files[0];
   }, [files, activeFileId]);
 
-  // ---------- UI STATE ----------
   const [search, setSearch] = useState("");
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [bottomHeight, setBottomHeight] = useState(DEFAULT_BOTTOM_HEIGHT);
   const [activeBottomTab, setActiveBottomTab] = useState("output");
 
-  // ✅ Auto-sync bottom tab with runtime inspector (if runtime asks)
   useEffect(() => {
     if (!runtime.activeInspector) return;
     setActiveBottomTab(runtime.activeInspector);
   }, [runtime.activeInspector]);
 
-  // ---------- FILE ACTIONS ----------
   const createNewFile = (rawName) => {
     let name = (rawName || "").trim();
     if (!name) return { error: "Empty name" };
@@ -72,7 +68,6 @@ export default function Playground() {
     });
   };
 
-  // ---------- COUNTS ----------
   const problemsFromBackend = Array.isArray(runtime.problems)
     ? runtime.problems
     : [];
@@ -95,7 +90,6 @@ export default function Playground() {
 
   const hasOutput = Boolean(runtime.output?.length);
 
-  // ---------- RESIZERS ----------
   const startSidebarResize = (e) => {
     const startX = e.clientX;
     const startWidth = sidebarWidth;
@@ -132,7 +126,6 @@ export default function Playground() {
     document.addEventListener("mouseup", onUp, { once: true });
   };
 
-  // ---------- RUN / DEBUG ----------
   const handleRun = () => {
     runtime.runWithCode(activeFile?.code || "");
   };
@@ -147,7 +140,6 @@ export default function Playground() {
     await runtime.rerunDebug();
   };
 
-  // ---------- EDITOR ----------
   const updateActiveFileCode = (newCode) => {
     setFiles((prev) =>
       prev.map((f) =>

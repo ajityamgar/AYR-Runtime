@@ -21,10 +21,8 @@ export default function AYREditor({
     editorRef.current = editor;
     monacoRef.current = monaco;
 
-    // 1️⃣ Register language
     monaco.languages.register({ id: "ayr" });
 
-    // 2️⃣ Syntax highlighting (safe)
     monaco.languages.setMonarchTokensProvider("ayr", {
       tokenizer: {
         root: [
@@ -35,11 +33,9 @@ export default function AYREditor({
       },
     });
 
-    // 3️⃣ Use built-in VS Code dark theme (NO custom theme yet)
     monaco.editor.setTheme("vs-dark");
   }
 
-  // ❌ Error + ⚠️ Warning underline
   useEffect(() => {
     if (!editorRef.current || !monacoRef.current) return;
 

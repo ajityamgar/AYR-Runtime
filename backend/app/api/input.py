@@ -1,4 +1,3 @@
-# api/input.py
 from fastapi import APIRouter  # pyright: ignore[reportMissingImports]
 from app.services.session import session_manager
 from app.runtime.interpreter import InputRequest, ExpressionError
@@ -26,7 +25,6 @@ def provide_input(req: InputRequestModel):
 
     raw = str(req.value).strip()
 
-    # ✅ 1) MULTI INPUT SUPPORT (a, b = pucho)
     last_vars = getattr(interp, "last_input_vars", None)
     if last_vars:
         parts = raw.split()
@@ -46,13 +44,10 @@ def provide_input(req: InputRequestModel):
         for name, value in zip(last_vars, parts):
             interp.env[name] = infer_type(value)
 
-        # ✅ clear multi input state
         interp.last_input_vars = None
 
-        # ✅ IMPORTANT: move PC forward (so same line repeat na ho)
         interp.pc += 1
 
-    # ✅ 2) SINGLE INPUT SUPPORT (x = pucho)
     else:
         var = getattr(interp, "last_input_var", None)
         if not var:
@@ -64,10 +59,8 @@ def provide_input(req: InputRequestModel):
         interp.env[var] = infer_type(raw)
         interp.last_input_var = None
 
-        # ✅ IMPORTANT: move PC forward
         interp.pc += 1
 
-    # ✅ 3) Continue execution normally
     try:
         while interp.pc < len(interp.program.statements):
             stmt = interp.program.statements[interp.pc]
@@ -88,7 +81,6 @@ def provide_input(req: InputRequestModel):
             "need_input": True,
             "session_id": req.session_id,
 
-            # ✅ show which input is pending (single OR multi)
             "var": getattr(interp, "last_input_var", None),
             "vars": getattr(interp, "last_input_vars", None),
 

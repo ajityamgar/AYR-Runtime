@@ -5,12 +5,10 @@ from app.services.debug_runner import start_debug_session, run_until_next_new_er
 
 router = APIRouter()
 
-# ✅ NEW: DEBUG START
 @router.post("/debug")
 def debug(req: DebugRequest):
     return start_debug_session(req.code, req.debug_key)
 
-# ✅ NEW: DEBUG "NEXT ERROR ONLY"
 @router.post("/debug/rerunDebug")
 def next_error(
     session_id: str = Query(...),
@@ -18,7 +16,6 @@ def next_error(
 ):
     return run_until_next_new_error(session_id, debug_key)
 
-# ✅ OLD ROUTES (kept)
 @router.get("/env")
 def env(session_id: str):
     return session_manager.env(session_id)

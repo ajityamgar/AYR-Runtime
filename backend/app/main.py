@@ -17,7 +17,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 👇 ROUTERS REGISTER KARO
 app.include_router(run.router)
 app.include_router(debug.router)
 app.include_router(input.router)

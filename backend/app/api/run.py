@@ -9,6 +9,5 @@ router = APIRouter()
 def run(req: RunRequest):
     return run_code(req.code)
 
-# ✅ keeping old function (not removed), just renamed to avoid override
 def run_internal(req: RunRequest):
     return run_code(req.code)

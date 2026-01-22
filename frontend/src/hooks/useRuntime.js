@@ -1,36 +1,28 @@
-// src/hooks/useRuntime.js
 import { useState } from "react";
 import api from "../services/api";
 
 export default function useRuntime() {
-  // ===============================
-  // CORE STATES
-  // ===============================
   const [code, setCode] = useState("");
   const [activeInspector, setActiveInspector] = useState("output");
 
-  const [mode, setMode] = useState("idle"); // idle | run | debug
+  const [mode, setMode] = useState("idle");
   const [loading, setLoading] = useState(false);
 
   const [sessionId, setSessionId] = useState(null);
 
-  // ✅ debug_key (file id) - used for "next error only"
   const [debugKey, setDebugKey] = useState(null);
 
   const [env, setEnv] = useState({});
   const [trace, setTrace] = useState([]);
   const [output, setOutput] = useState([]);
 
-  // ✅ detail + memory
   const [detail, setDetail] = useState({});
   const [memoryKB, setMemoryKB] = useState(0);
 
-  // ✅ old error/warning system
   const [error, setError] = useState(null);
-  const [warning, setWarning] = useState(null); // input/info
+  const [warning, setWarning] = useState(null);
   const [warnings, setWarnings] = useState([]);
 
-  // ✅ unified problems system
   const [problems, setProblems] = useState([]);
   const [summary, setSummary] = useState({
     total_errors: 0,
@@ -42,9 +34,6 @@ export default function useRuntime() {
   const [pc, setPc] = useState(0);
   const [finished, setFinished] = useState(false);
 
-  // ===============================
-  // HELPERS
-  // ===============================
   const resetDebuggerUI = () => {
     setSessionId(null);
     setEnv({});
@@ -71,18 +60,15 @@ export default function useRuntime() {
     });
   };
 
-  // ✅ Convert backend debug error -> unified problem object
    const buildProblemFromDebugError = (res) => {
     let msg = String(res?.error || "Unknown error");
 
-    // ✅ extract expression from backend field OR from error string
     let expr = res?.expression;
     if (!expr) {
       const m = msg.match(/Expression:\s*(.+)/);
       if (m && m[1]) expr = m[1].trim();
     }
 
-    // ✅ remove duplicate title prefix if backend included it
     if (typeof res?.line === "number") {
       const prefix = `Expression Error (Line ${res.line}):`;
       if (msg.startsWith(prefix)) {
@@ -90,7 +76,6 @@ export default function useRuntime() {
       }
     }
 
-    // ✅ also remove "Expression: xxx" from msg if we already show expression separately
     if (expr) {
       const exprText = `Expression: ${expr}`;
       if (msg.includes(exprText)) {
@@ -98,7 +83,6 @@ export default function useRuntime() {
       }
     }
 
-    // ✅ avoid blank message
     if (!msg) msg = "Expression evaluation failed.";
 
     return {
@@ -113,9 +97,7 @@ export default function useRuntime() {
     };
   };
 
-  // ===============================
-  // INPUT SUBMIT
-  // ===============================
+
   const submitInput = async (value) => {
     const res = await api.input(sessionId, value);
 
@@ -154,12 +136,6 @@ export default function useRuntime() {
     }
   };
 
-  // ===============================
-  // ▶ NORMAL RUN (WITH EXTERNAL CODE)
-  // ✅ RULES IMPLEMENTED:
-  // 1) If error => ONLY problems show, output hide
-  // 2) If no error => ONLY output show, problems empty
-  // ===============================
   const runWithCode = async (codeToRun) => {
     resetDebuggerUI();
     clearRunUI();
@@ -170,14 +146,12 @@ export default function useRuntime() {
     try {
       const res = await api.run(codeToRun);
 
-      // always update runtime internals
       setWarnings(res.warnings || []);
       setEnv(res.env || {});
       setTrace(res.trace || []);
       setDetail(res.detail || {});
       setMemoryKB(res.memory_kb || 0);
 
-      // ✅ unified problems + summary
       const problemsFromBackend = Array.isArray(res.problems) ? res.problems : [];
       const hasProblems = problemsFromBackend.length > 0;
 
@@ -190,7 +164,6 @@ export default function useRuntime() {
         }
       );
 
-      // ✅ INPUT WAITING (special case)
       if (res.success === false && (res.need_input || res.needs_input)) {
         setSessionId(res.session_id);
         setWarning({
@@ -200,34 +173,30 @@ export default function useRuntime() {
         });
         setError(null);
 
-        // in input case we show output so user sees prompts
         setOutput(res.output || []);
         setProblems(problemsFromBackend || []);
         setActiveInspector("output");
         return;
       }
 
-      // ✅ ERROR CASE => show ONLY problems
       if (res.success === false && hasProblems) {
         setProblems(problemsFromBackend);
-        setOutput([]); // ✅ IMPORTANT: hide output
+        setOutput([]);
         setError(null);
         setWarning(null);
         setActiveInspector("problems");
         return;
       }
 
-      // ✅ SUCCESS CASE => show ONLY output
       if (res.success === true) {
         setOutput(res.output || []);
-        setProblems([]); // ✅ IMPORTANT: problems empty
+        setProblems([]);
         setError(null);
         setWarning(null);
         setActiveInspector("output");
         return;
       }
 
-      // ✅ fallback (if backend returns weird shape)
       setOutput(res.output || []);
       setProblems(problemsFromBackend || []);
       if (hasProblems) setActiveInspector("problems");
@@ -236,17 +205,10 @@ export default function useRuntime() {
     }
   };
 
-  // ===============================
-  // ▶ NORMAL RUN (EDITOR CODE)
-  // ===============================
   const run = async () => {
     return runWithCode(code);
   };
 
-  // ===============================
-  // 🐞 DEBUG START
-  // ✅ Debug click = create session + auto-run to FIRST error
-  // ===============================
   const debug = async (newDebugKey, codeToDebug) => {
     clearRunUI();
 
@@ -256,7 +218,6 @@ export default function useRuntime() {
     try {
       setDebugKey(newDebugKey);
 
-      // ✅ 1) Create session
       const start = await api.debug(codeToDebug, newDebugKey);
 
       setSessionId(start.session_id);
@@ -271,7 +232,6 @@ export default function useRuntime() {
 
       setActiveInspector("problems");
 
-      // ✅ 2) Auto-run until first error
       const res = await api.nextError(start.session_id, newDebugKey);
 
       setEnv(res.env || {});
@@ -282,7 +242,6 @@ export default function useRuntime() {
 
       setPc(res.pc || 0);
 
-      // ✅ finished clean
       if (res.done === true) {
         setFinished(true);
         setError(null);
@@ -297,7 +256,6 @@ export default function useRuntime() {
         return;
       }
 
-      // ✅ stop at error (convert backend error -> problems)
       if (res.success === false && res.error) {
         const p = buildProblemFromDebugError(res);
 
@@ -322,9 +280,6 @@ export default function useRuntime() {
     }
   };
 
-  // ===============================
-  // 🔁 RE-RUN DEBUG = Run until NEXT NEW error
-  // ===============================
   const rerunDebug = async () => {
     if (!sessionId || mode !== "debug" || finished) return;
     if (!debugKey) return;
@@ -342,7 +297,6 @@ export default function useRuntime() {
 
       setPc(res.pc || 0);
 
-      // ✅ finished clean
       if (res.done === true) {
         setFinished(true);
         setError(null);
@@ -357,7 +311,6 @@ export default function useRuntime() {
         return;
       }
 
-      // ✅ stop at error (convert backend error -> problems)
       if (res.success === false && res.error) {
         const p = buildProblemFromDebugError(res);
 
@@ -384,9 +337,6 @@ export default function useRuntime() {
     }
   };
 
-  // ===============================
-  // ⬅ BACK (DEBUG)
-  // ===============================
   const back = async () => {
     if (!sessionId || mode !== "debug") return;
 
@@ -396,14 +346,11 @@ export default function useRuntime() {
     setTrace(res.trace || []);
     setDetail((prev) => ({
       ...(prev || {}),
-      state_info: res.state_info || null, // ✅ add this
+      state_info: res.state_info || null,
     }));
     setMemoryKB(res.memory_kb || 0);
   };
 
-  // ===============================
-  // ➡ NEXT (DEBUG) = Single step only
-  // ===============================
   const next = async () => {
     if (!sessionId || mode !== "debug" || finished) return;
 
@@ -415,7 +362,7 @@ export default function useRuntime() {
     setDetail((prev) => ({
       ...(prev || {}),
       ...(res.detail || {}),
-      state_info: res.state_info || prev?.state_info || null, // ✅ NEW
+      state_info: res.state_info || prev?.state_info || null,
     }));
     setMemoryKB(res.memory_kb || 0);
 
@@ -435,61 +382,44 @@ export default function useRuntime() {
     }
   };
 
-  // ===============================
-  // STEP (legacy compatibility)
-  // ===============================
   const step = async () => {
     return next();
   };
 
-  // ===============================
-  // EDITOR HELPERS
-  // ===============================
   const jumpToLine = (line) => {};
 
-  // ===============================
-  // EXPOSE PUBLIC API
-  // ===============================
   return {
-    // editor
     code,
     setCode,
 
-    // ui state
     mode,
     loading,
     finished,
 
-    // runtime data
     env,
     trace,
     output,
     detail,
     memoryKB,
 
-    // old errors
     error,
     warning,
     warnings,
 
-    // new problems
     problems,
     summary,
 
     pc,
 
-    // debug
     sessionId,
     debugKey,
 
-    // actions
     run,
     runWithCode,
     activeInspector,
     setActiveInspector,
     submitInput,
 
-    // debug actions
     debug,
     rerunDebug,
     back,

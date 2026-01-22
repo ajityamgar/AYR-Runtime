@@ -4,8 +4,6 @@ from fastapi import HTTPException  # pyright: ignore[reportMissingImports]
 class SessionManager:
     def __init__(self):
         self.sessions = {}
-
-        # ✅ NEW: debug_key -> seen error signatures (to skip old errors)
         self.debug_seen = {}
 
     def store(self, sid, interp):
@@ -16,7 +14,6 @@ class SessionManager:
             raise HTTPException(status_code=404, detail="Session not found")
         return self.sessions[sid]
 
-    # ✅ NEW helpers for debug_key memory
     def _seen_set(self, debug_key: str):
         if debug_key not in self.debug_seen:
             self.debug_seen[debug_key] = set()
@@ -29,13 +26,9 @@ class SessionManager:
         self._seen_set(debug_key).add(signature)
 
     def clear_seen(self, debug_key: str):
-        # optional reset
         if debug_key in self.debug_seen:
             del self.debug_seen[debug_key]
 
-    # -------------------------------
-    # OLD DEBUG STEPPING (still kept)
-    # -------------------------------
     def step(self, sid):
         interp = self.get(sid)
 
@@ -50,8 +43,6 @@ class SessionManager:
                 "warnings": getattr(interp, "warnings", []),
                 "trace": interp.trace_log,
                 "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0,
-
-                # ✅ NEW: give state_info for Detail inspector
                 "state_info": interp.state.info() if hasattr(interp, "state") else None,
             }
         except Exception as e:
@@ -65,8 +56,6 @@ class SessionManager:
                 "warnings": getattr(interp, "warnings", []),
                 "trace": interp.trace_log,
                 "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0,
-
-                # ✅ NEW: even on error, return state_info
                 "state_info": interp.state.info() if hasattr(interp, "state") else None,
             }
 
@@ -134,8 +123,6 @@ class SessionManager:
             "output": interp.output,
             "trace": interp.trace_log,
             "pc": interp.pc,
-
-            # ✅ NEW: state info for UI
             "state_info": state_info,
         }
 

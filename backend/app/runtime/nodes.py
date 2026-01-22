@@ -192,20 +192,10 @@ class ForNode:
     line: int
     index_name: Optional[str] = None
 
-
-# ============================================================
-# MULTI ASSIGNMENT
-# ============================================================
-
 @dataclass
 class MultiAssignNode:
     names: List[str]
     line: int
-
-
-# ============================================================
-# ✅ OOP (CLASS / OBJECT)
-# ============================================================
 
 @dataclass
 class ClassDefNode:

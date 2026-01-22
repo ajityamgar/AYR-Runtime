@@ -28,8 +28,6 @@ def start_debug_session(code: str, debug_key: str):
         "env": getattr(interp, "env", {}),
         "output": getattr(interp, "output", []),
         "trace": getattr(interp, "trace_log", []),
-
-        # ✅ NEW: add state_info inside detail
         "detail": {
             "state_info": interp.state.info() if hasattr(interp, "state") else None
         },
@@ -63,8 +61,6 @@ def run_until_next_new_error(session_id: str, debug_key: str, max_steps: int = 1
                     "error": None,
                     "line": None,
                     "expression": None,
-
-                    # ✅ NEW
                     "detail": {
                         "state_info": interp.state.info() if hasattr(interp, "state") else None
                     },
@@ -92,8 +88,6 @@ def run_until_next_new_error(session_id: str, debug_key: str, max_steps: int = 1
                 "error": msg,
                 "line": inp.line,
                 "expression": expr,
-
-                # ✅ NEW
                 "detail": {
                     "state_info": interp.state.info() if hasattr(interp, "state") else None
                 },
@@ -109,7 +103,6 @@ def run_until_next_new_error(session_id: str, debug_key: str, max_steps: int = 1
             sig = _signature(line, msg, expr)
 
             if session_manager.has_seen(debug_key, sig):
-                # skip old error and continue
                 try:
                     interp.pc += 1
                 except Exception:
@@ -131,8 +124,6 @@ def run_until_next_new_error(session_id: str, debug_key: str, max_steps: int = 1
                 "error": msg,
                 "line": line,
                 "expression": expr,
-
-                # ✅ NEW
                 "detail": {
                     "state_info": interp.state.info() if hasattr(interp, "state") else None
                 },
@@ -166,8 +157,6 @@ def run_until_next_new_error(session_id: str, debug_key: str, max_steps: int = 1
                 "error": msg,
                 "line": None,
                 "expression": None,
-
-                # ✅ NEW
                 "detail": {
                     "state_info": interp.state.info() if hasattr(interp, "state") else None
                 },
@@ -188,8 +177,6 @@ def run_until_next_new_error(session_id: str, debug_key: str, max_steps: int = 1
         "error": "Max debug steps exceeded",
         "line": None,
         "expression": None,
-
-        # ✅ NEW
         "detail": {
             "state_info": interp.state.info() if hasattr(interp, "state") else None
         },

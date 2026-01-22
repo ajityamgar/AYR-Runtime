@@ -8,10 +8,6 @@ class Parser:
         self.pos = 0
         self.current = tokens[0]
 
-    # ==================================================
-    # BASIC HELPERS
-    # ==================================================
-
     def advance(self):
         self.pos += 1
         if self.pos < len(self.tokens):
@@ -48,17 +44,12 @@ class Parser:
         if isinstance(node, IndexAccessNode):
             return node.expr_text
 
-        # ✅ NEW: for class/object features
         if "MemberAccessNode" in globals() and isinstance(node, MemberAccessNode):
             return node.expr_text
         if "MethodCallNode" in globals() and isinstance(node, MethodCallNode):
             return node.expr_text
 
         return "expression"
-
-    # ==================================================
-    # ENTRY POINT
-    # ==================================================
 
     def parse(self):
         statements = []
@@ -70,14 +61,9 @@ class Parser:
 
         return Program(statements)
 
-    # ==================================================
-    # STATEMENTS
-    # ==================================================
-
     def statement(self):
         tok = self.current
 
-        # ✅ NEW: class definition
         if tok.type == TOKEN_KEYWORD and tok.value == "class":
             return self.class_def()
 
@@ -115,15 +101,10 @@ class Parser:
                 self.advance()
                 return ContinueNode(tok.line)
 
-        # assignment OR multi-assignment OR function call OR member assignment/call
         if tok.type == TOKEN_IDENTIFIER:
             return self.assignment_or_call()
 
         raise Exception(f"Invalid statement at line {tok.line}")
-
-    # ==================================================
-    # ✅ CLASS / METHOD DEFINITIONS
-    # ==================================================
 
     def class_def(self):
         """
@@ -134,23 +115,19 @@ class Parser:
         start = self.expect(TOKEN_KEYWORD, "class")
         name_tok = self.expect(TOKEN_IDENTIFIER)
 
-        # strict ":"
         if not (self.current.type == TOKEN_OPERATOR and self.current.value == ":"):
             raise Exception(f"SyntaxError (Line {start.line}): Missing ':' after class name")
         self.advance()
 
-        # must end line
         if self.current.type != TOKEN_NEWLINE:
             raise Exception(f"SyntaxError (Line {start.line}): Expected newline after class definition")
         self.expect(TOKEN_NEWLINE)
 
-        # indentation block
         self.expect(TOKEN_INDENT)
         self.skip_newlines()
 
         methods = []
         while self.current.type != TOKEN_DEDENT:
-            # class body only allows kaam (method)
             if self.current.type == TOKEN_KEYWORD and self.current.value == "kaam":
                 methods.append(self.method_def())
                 self.skip_newlines()
@@ -176,7 +153,6 @@ class Parser:
         start = self.expect(TOKEN_KEYWORD, "kaam")
         name_tok = self.expect(TOKEN_IDENTIFIER)
 
-        # must have '('
         if not (self.current.type == TOKEN_OPERATOR and self.current.value == "("):
             raise Exception(f"SyntaxError (Line {start.line}): Missing '(' in method definition")
         self.advance()
@@ -189,12 +165,10 @@ class Parser:
                 self.advance()
                 params.append(self.expect(TOKEN_IDENTIFIER).value)
 
-        # must have ')'
         if not (self.current.type == TOKEN_OPERATOR and self.current.value == ")"):
             raise Exception(f"SyntaxError (Line {start.line}): Missing ')' in method definition")
         self.advance()
 
-        # strict ':'
         if not (self.current.type == TOKEN_OPERATOR and self.current.value == ":"):
             raise Exception(f"SyntaxError (Line {start.line}): Missing ':' after method signature")
         self.advance()
@@ -212,22 +186,16 @@ class Parser:
 
         return MethodDefNode(name_tok.value, params, body, start.line)
 
-    # ==================================================
-    # ASSIGNMENT
-    # ==================================================
-
     def assignment_or_call(self):
         first = self.expect(TOKEN_IDENTIFIER)
 
-        # ✅ 1) MEMBER STATEMENTS: self.x = expr   OR   obj.method(...)
         if self.current.type == TOKEN_OPERATOR and self.current.value == ".":
             base = VarAccessNode(first.value, first.line)
             base.expr_text = first.value
 
-            self.advance()  # consume '.'
+            self.advance()
             mem_tok = self.expect(TOKEN_IDENTIFIER)
 
-            # ✅ member assignment: a.b = expr
             if self.current.type == TOKEN_OPERATOR and self.current.value == "=":
                 self.advance()
                 val = self.expr()
@@ -241,19 +209,16 @@ class Parser:
                 )
                 return node
 
-            # ✅ method call statement: a.b(...)
             if self.current.type == TOKEN_OPERATOR and self.current.value == "(":
                 return self.method_call(base, mem_tok.value, first.line)
 
             raise Exception(f"Invalid member statement at line {first.line}")
 
-        # ✅ 2) MULTI ASSIGNMENT: a, b = ...
         names = [first.value]
         while self.current.type == TOKEN_OPERATOR and self.current.value == ",":
             self.advance()
             names.append(self.expect(TOKEN_IDENTIFIER).value)
 
-        # ✅ 3) SIMPLE ASSIGNMENT: a = expr
         if self.current.type == TOKEN_OPERATOR and self.current.value == "=":
             self.advance()
             value = self.expr()
@@ -270,7 +235,6 @@ class Parser:
             node.expr_text = f"{names[0]} = {self.expr_to_text(value)}"
             return node
 
-        # ✅ 4) INDEX ASSIGNMENT: a[i] = expr
         if self.current.type == TOKEN_OPERATOR and self.current.value == "[":
             base = VarAccessNode(first.value, first.line)
             base.expr_text = first.value
@@ -290,7 +254,6 @@ class Parser:
                 f"{first.value}[{idx.expr_text}] = {self.expr_to_text(val)}"
             )
 
-        # ✅ 5) FUNCTION CALL: fn(...)
         if self.current.type == TOKEN_OPERATOR and self.current.value == "(":
             node = self.func_call(first)
             node.expr_text = (
@@ -300,11 +263,6 @@ class Parser:
             return node
 
         raise Exception(f"Invalid assignment or call at line {first.line}")
-
-
-    # ==================================================
-    # ✅ METHOD CALL PARSER (obj.method(...))
-    # ==================================================
 
     def method_call(self, obj_node, method_name: str, line: int):
         self.expect(TOKEN_OPERATOR, "(")
@@ -324,10 +282,6 @@ class Parser:
             + ")"
         )
         return MethodCallNode(obj_node, method_name, args, line, expr_text)
-
-    # ==================================================
-    # IF / ELSE
-    # ==================================================
 
     def if_stmt(self):
         start = self.expect(TOKEN_KEYWORD, "agar")
@@ -353,10 +307,6 @@ class Parser:
 
         return IfNode(condition, body, elif_blocks, else_body, start.line)
 
-    # ==================================================
-    # LOOPS
-    # ==================================================
-
     def while_stmt(self):
         start = self.expect(TOKEN_KEYWORD, "jabtak")
         cond = self.expr()
@@ -381,10 +331,6 @@ class Parser:
 
         return ForNode(iterable, var_tok.value, body, start.line, index_name)
 
-    # ==================================================
-    # FUNCTIONS
-    # ==================================================
-
     def func_def(self):
         start = self.expect(TOKEN_KEYWORD, "kaam")
         name = self.expect(TOKEN_IDENTIFIER).value
@@ -400,7 +346,6 @@ class Parser:
 
         self.expect(TOKEN_OPERATOR, ")")
 
-        # ✅ NEW: optional ":" support (safe)
         if self.current.type == TOKEN_OPERATOR and self.current.value == ":":
             self.advance()
 
@@ -422,10 +367,6 @@ class Parser:
         self.expect(TOKEN_OPERATOR, ")")
         return FunctionCallNode(name_tok.value, args, name_tok.line)
 
-    # ==================================================
-    # BLOCK
-    # ==================================================
-
     def block(self):
         self.expect(TOKEN_INDENT)
         self.skip_newlines()
@@ -437,10 +378,6 @@ class Parser:
 
         self.expect(TOKEN_DEDENT)
         return stmts
-
-    # ==================================================
-    # EXPRESSIONS
-    # ==================================================
 
     def expr(self):
         return self.logical()
@@ -491,7 +428,6 @@ class Parser:
             self.advance()
             node = UnaryOpNode("nahi", self.unary(), tok.line)
 
-            # ✅ FIX: expr_text set karo
             inner = self.expr_to_text(node.node)
             node.expr_text = f"nahi {inner}"
 
@@ -544,10 +480,7 @@ class Parser:
             node = VarAccessNode(tok.value, tok.line)
             node.expr_text = tok.value
 
-            # ✅ chaining support: a[0].b().c
             while True:
-
-                # 🔁 INDEXING SUPPORT
                 if self.current.type == TOKEN_OPERATOR and self.current.value == "[":
                     self.advance()
                     idx = self.expr()
@@ -560,17 +493,14 @@ class Parser:
                     )
                     continue
 
-                # ✅ MEMBER ACCESS / METHOD CALL
                 if self.current.type == TOKEN_OPERATOR and self.current.value == ".":
                     self.advance()
                     mem_tok = self.expect(TOKEN_IDENTIFIER)
 
-                    # method call: obj.method(...)
                     if self.current.type == TOKEN_OPERATOR and self.current.value == "(":
                         node = self.method_call(node, mem_tok.value, tok.line)
                         continue
 
-                    # member access: obj.field
                     node = MemberAccessNode(
                         node,
                         mem_tok.value,
@@ -579,7 +509,6 @@ class Parser:
                     )
                     continue
 
-                # FUNCTION CALL (constructor or normal function)
                 if self.current.type == TOKEN_OPERATOR and self.current.value == "(":
                     return self.func_call(tok)
 
