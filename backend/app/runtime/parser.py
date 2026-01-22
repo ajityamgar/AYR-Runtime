@@ -259,8 +259,11 @@ class Parser:
             value = self.expr()
 
             if len(names) > 1:
-                node = MultiAssignNode(names, value, first.line)
-                node.expr_text = f"{', '.join(names)} = {self.expr_to_text(value)}"
+                if not isinstance(value, InputNode):
+                    raise Exception(f"SyntaxError (Line {first.line}): Multi input assignment supports only 'pucho'")
+
+                node = MultiAssignNode(names, first.line)
+                node.expr_text = f"{', '.join(names)} = pucho"
                 return node
 
             node = VarAssignNode(names[0], value, first.line)

@@ -9,10 +9,6 @@ class InputRequest(Exception):
     def __init__(self, line):
         self.line = line
 
-# ==================================================
-# EXPRESSION ERROR
-# ==================================================
-
 class ExpressionError(Exception):
     def __init__(self, line, message, expression):
         self.line = line
@@ -27,11 +23,6 @@ class ExpressionError(Exception):
             f"   Expression: {self.expression}"
         )
 
-
-    # ==================================================
-    # HELPERS
-    # ==================================================
-
     def type_name(v):
         if v is None: return "none"
         if isinstance(v, bool): return "bool"
@@ -42,7 +33,6 @@ class ExpressionError(Exception):
         if isinstance(v, tuple): return "tuple"
         if isinstance(v, dict): return "dict"
         return "unknown"
-
 
     def infer_input_type(raw):
         raw = raw.strip()
@@ -55,11 +45,6 @@ class ExpressionError(Exception):
         except:
             pass
         return raw
-
-
-    # ==================================================
-    # BINARY OPERATIONS
-    # ==================================================
 
     def apply_binary_op(a, b, op, node):
         la = ExpressionError.type_name(a)
@@ -133,10 +118,6 @@ class ExpressionError(Exception):
             node.expr_text
         )
 
-# ==================================================
-# CONTROL FLOW SIGNALS
-# ==================================================
-
 class BreakSignal(Exception): pass
 class ContinueSignal(Exception): pass
 
@@ -144,26 +125,6 @@ class ReturnSignal(Exception):
     def __init__(self, value):
         self.value = value
 
-
-# ==================================================
-# ✅ OOP RUNTIME TYPES
-# ==================================================
-
-@dataclass
-class AYRClass:
-    name: str
-    methods: dict  # method_name -> MethodDefNode
-
-
-@dataclass
-class AYRObject:
-    class_ref: AYRClass
-    fields: dict
-
-
-# ==================================================
-# INTERPRETER
-# ==================================================
 
 class Interpreter:
     def __init__(self):
@@ -180,21 +141,13 @@ class Interpreter:
         self.trace_log = []
         self.warnings = []
 
-        # ✅ NEW: class registry + destructor support
         self.classes = {}
         self._objects_created = []
 
-        # ✅ NEW: timeline/trace counter
         self._trace_i = 0
 
 
-    # ✅ NEW: trace snapshot helper
     def _trace_snapshot(self, line=None):
-        """
-        Stores timeline snapshot like:
-        { i: 0, line: None, env: {} }
-        { i: 1, line: 2, env: {x:1} }
-        """
         try:
             env_copy = copy.deepcopy(self.env)
         except Exception:
@@ -207,8 +160,6 @@ class Interpreter:
         })
         self._trace_i += 1
 
-
-    # ---------- load program ----------
     def load(self, program):
         self.program = program
         self.env = {}
@@ -228,10 +179,8 @@ class Interpreter:
         self.state.reset()
         self.state.save(self.env)
 
-        # ✅ FIRST timeline snapshot: [0] {}
         self._trace_snapshot(line=None)
 
-    # ---------- run whole program ----------
     def run(self):
         self.pc = 0
         self.env = {}
@@ -240,7 +189,6 @@ class Interpreter:
         self.state.reset()
         self.state.save(self.env)
 
-        # ✅ ensure trace always starts with {} even in run()
         self.trace_log = []
         self._trace_i = 0
         self._trace_snapshot(line=None)
@@ -248,48 +196,29 @@ class Interpreter:
         while self.pc < len(self.program.statements):
             self.step()
 
-        # ✅ Phase-1 deterministic destructors at end
         self._run_destructors()
 
         # warnings
         for v in self.env:
             if v not in self.used_vars:
-                # ✅ store warning in warnings[] (do not print)
                 self.warnings.append(f"⚠️ Warning: variable '{v}' define hua hai par use nahi hua.")
 
-    # ---------- single step ----------
     def step(self):
         if self.pc >= len(self.program.statements):
             return False
 
         stmt = self.program.statements[self.pc]
 
-        # ✅ keep old style trace (not removed), but now timeline objects are main
-        # self.trace_log.append( f"line {stmt.line} | {type(stmt).__name__}" )
-
         self.execute(stmt)
         self.state.save(self.env)
         self.pc += 1
         return True
 
-
-    # ==================================================
-    # ✅ STRING FORMATTER (supports {var} and {self.field})
-    # ==================================================
-
     def format_string(self, text: str, line: int):
-        """
-        Supports:
-        - {var}
-        - {self.field}
-        - multiple replacements
-        Missing variable/field -> ExpressionError(line,...)
-        """
 
         def resolve_expr(expr: str):
             expr = expr.strip()
 
-            # {x}
             if "." not in expr:
                 if expr not in self.env:
                     raise ExpressionError(
@@ -299,12 +228,11 @@ class Interpreter:
                     )
                 return self.env[expr]
 
-            # {self.name} or {p.name}
             parts = expr.split(".")
             if len(parts) != 2:
                 raise ExpressionError(
                     line,
-                    "Invalid interpolation expression.",
+                    "String ke andar interpolation expression sahi format me nahi hai.",
                     expr
                 )
 
@@ -321,7 +249,7 @@ class Interpreter:
             if not isinstance(obj, AYRObject):
                 raise ExpressionError(
                     line,
-                    "Dot access sirf object par hota hai",
+                    "Dot access - sirf object par hota hai",
                     expr
                 )
 
@@ -338,24 +266,15 @@ class Interpreter:
             inner = match.group(1)
             return str(resolve_expr(inner))
 
-        # ✅ allows {var} and {self.field}
         return re.sub(r"\{([^{}]+)\}", replacer, text)
 
-
-    # ==================================================
-    # STATEMENT EXECUTION
-    # ==================================================
-
     def execute(self, node):
-
-        # ✅ CLASS DEF
         if isinstance(node, ClassDefNode):
             methods_map = {}
             for m in node.methods:
                 methods_map[m.name] = m
             self.classes[node.name] = AYRClass(node.name, methods_map)
 
-            # ✅ snapshot after effect
             if hasattr(node, "line"):
                 self._trace_snapshot(line=node.line)
             return
@@ -368,27 +287,20 @@ class Interpreter:
                 self.last_input_var = node.name
                 raise InputRequest(inp.line)
 
-        # ✅ MEMBER ASSIGNMENT (p.age = 21)
         elif isinstance(node, MemberAssignNode):
             obj = self.eval(node.obj)
             if not isinstance(obj, AYRObject):
                 raise ExpressionError(
                     node.line,
-                    "Dot access sirf object par hota hai",
+                    "Dot access - sirf object par hota hai",
                     node.expr_text
                 )
             obj.fields[node.member] = self.eval(node.value)
 
         elif isinstance(node, MultiAssignNode):
-            raw = input(">> ").split()
-            if len(raw) != len(node.names):
-                raise ExpressionError(
-                    node.line,
-                    "Input count aur variables ka count match nahi karta.",
-                    "pucho"
-                )
-            for n, v in zip(node.names, raw):
-                self.env[n] = ExpressionError.infer_input_type(v)
+            self.last_input_vars = node.names
+            self.last_input_line = node.line
+            raise InputRequest(node.line)
 
         # ---------- print ----------
         elif isinstance(node, PrintNode):
@@ -403,7 +315,6 @@ class Interpreter:
                 for cond, body in node.elif_blocks:
                     if self.eval(cond):
                         self.exec_block(body)
-                        # ✅ snapshot after if
                         if hasattr(node, "line"):
                             self._trace_snapshot(line=node.line)
                         return
@@ -453,10 +364,8 @@ class Interpreter:
             self.functions[node.name] = node
 
         elif isinstance(node, FunctionCallNode):
-            # ✅ normal function call statement OR constructor call statement
             self.eval(node)
 
-        # ✅ METHOD CALL STATEMENT (p.show())
         elif isinstance(node, MethodCallNode):
             self.call_method(node)
 
@@ -481,16 +390,13 @@ class Interpreter:
                     )
                 collection[index] = value
 
-                # ✅ snapshot after assignment
                 if hasattr(node, "line"):
                     self._trace_snapshot(line=node.line)
                 return
 
-            # ---------- DICTIONARY ----------
             if isinstance(collection, dict):
                 collection[index] = value
 
-                # ✅ snapshot after assignment
                 if hasattr(node, "line"):
                     self._trace_snapshot(line=node.line)
                 return
@@ -509,18 +415,14 @@ class Interpreter:
                     "wapas"
                 )
             raise ReturnSignal(self.eval(node.value) if node.value else None)
-
-        # ✅ ONLY AFTER EXECUTION snapshot (no duplicates)
         if hasattr(node, "line"):
             self._trace_snapshot(line=node.line)
+
     # ---------- execute block ----------
     def exec_block(self, stmts):
         for s in stmts:
             self.execute(s)
 
-    # ==================================================
-    # EXPRESSION EVALUATION
-    # ==================================================
 
     def eval(self, node):
 
@@ -557,13 +459,13 @@ class Interpreter:
             if not isinstance(obj, AYRObject):
                 raise ExpressionError(
                     node.line,
-                    "Dot access sirf object par hota hai",
+                    "Dot access - sirf object par hota hai",
                     node.expr_text
                 )
             if node.member not in obj.fields:
                 raise ExpressionError(
                     node.line,
-                    f"Property '{node.member}' not found",
+                    f"Property '{node.member}' nahi mila",
                     node.expr_text
                 )
             return obj.fields[node.member]
@@ -644,8 +546,6 @@ class Interpreter:
                 node.op,
                 node
             )
-
-        # ✅ FUNCTION CALL EXPRESSION (normal function OR constructor)
         if isinstance(node, FunctionCallNode):
             # constructor call
             if node.name in self.classes:
@@ -653,15 +553,9 @@ class Interpreter:
             # normal function
             return self.call(node)
 
-        # ✅ METHOD CALL EXPRESSION (supports nested use)
         if isinstance(node, MethodCallNode):
             return self.call_method(node)
-
         return None
-
-    # ==================================================
-    # FUNCTION CALL
-    # ==================================================
 
     def call(self, call):
         if call.name not in self.functions:
@@ -701,10 +595,6 @@ class Interpreter:
         self.env = old_env
         self._in_function = old_flag
         return None
-
-    # ==================================================
-    # ✅ CLASS / OBJECT SUPPORT
-    # ==================================================
 
     def instantiate(self, ctor_call: FunctionCallNode):
         cls = self.classes.get(ctor_call.name)
@@ -808,7 +698,6 @@ class Interpreter:
             for s in method_node.body:
                 self.execute(s)
         except ReturnSignal as r:
-            # warning for returning inside __init__ / __del__
             if method_node.name in ("__init__", "__del__"):
                 self.warnings.append(
                     f"⚠️ Warning (Line {call_line}): '{method_node.name}' should not return a value."
@@ -822,7 +711,6 @@ class Interpreter:
         return None
 
     def _run_destructors(self):
-        # reverse order: last created destroyed first
         for obj in reversed(self._objects_created):
             cls = obj.class_ref
             if "__del__" not in cls.methods:
@@ -830,7 +718,6 @@ class Interpreter:
 
             d = cls.methods["__del__"]
 
-            # __del__ must take exactly 1 param (self-like)
             if len(d.params) != 1:
                 raise ExpressionError(
                     d.line,

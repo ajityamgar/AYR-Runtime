@@ -200,7 +200,6 @@ class ForNode:
 @dataclass
 class MultiAssignNode:
     names: List[str]
-    value: Any
     line: int
 
 
@@ -247,3 +246,16 @@ class MethodCallNode:
     args: List[Any]
     line: int
     expr_text: str
+
+
+@dataclass
+class AYRClass:
+    name: str
+    methods: dict
+
+
+@dataclass
+class AYRObject:
+    class_ref: AYRClass
+    fields: dict
+
