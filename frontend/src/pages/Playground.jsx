@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-
 import Editor from "../components/Editor";
 import Controls from "../components/Controls";
 import FileExplorer from "../components/FileExplorer";
 import InspectorTabs from "../components/InspectorTabs";
 import InspectorPanel from "../components/InspectorPanel";
-
+import { useNavigate } from "react-router-dom";
 import useRuntime from "../hooks/useRuntime";
 
 const MIN_SIDEBAR_WIDTH = 140;
@@ -13,9 +12,11 @@ const MIN_BOTTOM_HEIGHT = 140;
 const DEFAULT_SIDEBAR_WIDTH = 220;
 const DEFAULT_BOTTOM_HEIGHT = 220;
 
+
+
 export default function Playground() {
   const runtime = useRuntime();
-
+  const navigate = useNavigate();
   // ---------- FILES ----------
   const [files, setFiles] = useState([
     { id: "main", name: "main.ayr", code: "" },
@@ -165,6 +166,7 @@ export default function Playground() {
         back={runtime.back}
         next={runtime.next}
         mode={runtime.mode}
+        onBrandClick={() => navigate("/")}
       />
 
       {/* MAIN */}

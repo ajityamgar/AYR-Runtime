@@ -486,7 +486,13 @@ class Parser:
         if self.current.type == TOKEN_KEYWORD and self.current.value == "nahi":
             tok = self.current
             self.advance()
-            return UnaryOpNode("nahi", self.unary(), tok.line)
+            node = UnaryOpNode("nahi", self.unary(), tok.line)
+
+            # ✅ FIX: expr_text set karo
+            inner = self.expr_to_text(node.node)
+            node.expr_text = f"nahi {inner}"
+
+            return node
         return self.primary()
 
     def primary(self):

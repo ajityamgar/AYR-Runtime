@@ -16,12 +16,7 @@ def _make_problem(kind: str, title: str, message: str, line=None, expression=Non
 
 
 def run_code(code: str):
-    """
-    NORMAL RUN MODE:
-    - Executes till end
-    - Collects ALL errors/warnings/bugs
-    - Returns summary + problems list for frontend Problems tab
-    """
+    interp = None
     problems = []
     errors = []
     warnings = []
@@ -79,8 +74,7 @@ def run_code(code: str):
 
                     "env": interp.env,
                     "trace": interp.trace_log,
-                    "detail": { "state_info": interp.state.info() if hasattr(interp, "state") else None},
-                    "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0
+                    "detail": { "state_info": (interp.state.info() if interp and hasattr(interp, "state") else None)},                    "memory_kb": interp.state.memory_kb() if hasattr(interp, "state") else 0
                 }
 
             except ExpressionError as e:
@@ -124,6 +118,14 @@ def run_code(code: str):
                 if not interp.program or interp.pc >= len(interp.program.statements):
                     break
 
+        if hasattr(interp, "env") and hasattr(interp, "used_vars") and hasattr(interp, "warnings"):
+            for v in interp.env:
+                if v not in interp.used_vars:
+                    interp.warnings.append(
+                        f"⚠️ Warning: variable '{v}' define hua hai par use nahi hua."
+                    )
+
+        
         # ✅ interpreter warnings merge (if any)
         if hasattr(interp, "warnings"):
             for w in interp.warnings:

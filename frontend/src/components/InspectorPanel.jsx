@@ -117,22 +117,21 @@ export default function InspectorPanel({ active, runtime }) {
         {/* ✅ OLD fallback: runtime.error */}
         {problems.length === 0 && runtime.error && <ErrorBox error={runtime.error} />}
 
-        {/* ✅ OLD fallback: runtime.warnings */}
         {problems.length === 0 &&
-          fallbackWarnings.map((w, i) => (
-            <div
-              key={i}
-              style={{
-                background: "#3a3a1d",
-                color: "#f9c74f",
-                padding: 8,
-                borderTop: "1px solid #555",
-                fontFamily: "monospace",
-              }}
-            >
-              ⚠ {String(w)}
-            </div>
-          ))}
+        fallbackWarnings.map((w, i) => (
+          <div
+            key={i}
+            style={{
+              background: "#3a3a1d",
+              color: "#f9c74f",
+              padding: 8,
+              borderTop: "1px solid #555",
+              fontFamily: "monospace",
+            }}
+          >
+            ⚠ {typeof w === "string" ? w : w?.message || JSON.stringify(w)}
+          </div>
+        ))}
 
         {!hasProblems && (
           <div style={{ padding: 12, color: "#888" }}>No problems detected</div>

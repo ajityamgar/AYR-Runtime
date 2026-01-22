@@ -11,7 +11,7 @@ export default function InspectorTabs({
   const tabs = [
     { id: "problems", label: "Problems", badge: safeProblemCount },
     { id: "output", label: "Output", glow: hasOutput },
-    { id: "debug", label: "ENV" }, // ✅ changed name
+    { id: "debug", label: "ENV" }, 
     { id: "timeline", label: "Timeline" },
     { id: "detail", label: "Detail" },
     { id: "memory", label: "Memory" },

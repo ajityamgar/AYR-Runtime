@@ -12,6 +12,9 @@ export default function Controls({
 
   // ✅ mode controls which buttons show
   mode,
+
+  // ✅ NEW
+  onBrandClick,
 }) {
   const isDebug = mode === "debug";
 
@@ -33,15 +36,19 @@ export default function Controls({
         <button onClick={run}>▶ Run</button>
       </div>
 
-      {/* CENTER */}
+      {/* CENTER (CLICKABLE) */}
       <div
+        onClick={onBrandClick}
         style={{
           textAlign: "center",
           fontWeight: "bold",
           color: "#4FC1FF",
           fontSize: 16,
           letterSpacing: 1,
+          cursor: "pointer",
+          userSelect: "none",
         }}
+        title="Go to Home"
       >
         AYR Runtime
       </div>

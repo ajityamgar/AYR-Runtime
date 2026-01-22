@@ -1,4 +1,6 @@
-x = 1
-jabtak x < 5
-    dikhao x
-    x = x + 1
+x = 10 
+y = 20
+z = 56
+dikhao x
+dikhao z
+dikhao y
