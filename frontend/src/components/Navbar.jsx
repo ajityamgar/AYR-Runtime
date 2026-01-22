@@ -1,21 +1,50 @@
-import React from "react";
+// src/components/Navbar.jsx
+import React, { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 
 export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const linkClass = ({ isActive }) =>
-    `text-sm transition ${
-      isActive ? "text-cyan-300" : "text-white/70 hover:text-white"
+    `text-sm font-medium transition ${
+      isActive
+        ? "text-cyan-300"
+        : "text-white/70 hover:text-white"
     }`;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070B12]/80 backdrop-blur">
+    <header
+      className={`sticky top-0 z-50 border-b backdrop-blur-xl transition ${
+        scrolled
+          ? "border-white/10 bg-[#070B12]/75"
+          : "border-white/10 bg-[#070B12]/55"
+      }`}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-cyan-300 text-xl font-bold">{`</>`}</span>
-          <span className="text-lg font-semibold tracking-wide">AYR Runtime</span>
+        {/* Brand */}
+        <Link to="/" className="group flex items-center gap-2">
+          <span className="grid h-9 w-9 place-items-center rounded-2xl border border-white/10 bg-white/5 text-cyan-300 text-sm font-bold transition group-hover:bg-white/10">
+            {"</>"}
+          </span>
+          <div className="leading-tight">
+            <div className="text-sm font-extrabold tracking-wide text-white">
+              AYR Runtime
+            </div>
+            <div className="text-[10px] text-white/40">
+              Hindi Keywords • Web IDE • Debugger
+            </div>
+          </div>
         </Link>
 
-        <nav className="flex items-center gap-6">
+        {/* Nav */}
+        <nav className="hidden items-center gap-6 md:flex">
           <NavLink to="/" className={linkClass}>
             Home
           </NavLink>
@@ -28,11 +57,21 @@ export default function Navbar() {
 
           <Link
             to="/code-now"
-            className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-cyan-400"
+            className="rounded-2xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-cyan-400"
           >
-            Code Now
+            Code Now →
           </Link>
         </nav>
+
+        {/* Mobile CTA (simple) */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Link
+            to="/code-now"
+            className="rounded-2xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-black transition hover:bg-cyan-400"
+          >
+            Code →
+          </Link>
+        </div>
       </div>
     </header>
   );
