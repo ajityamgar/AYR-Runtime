@@ -113,7 +113,6 @@ function normalizeRunResponse(data) {
 }
 
 function normalizeDebugResponse(data) {
-  // ✅ safe defaults for debug responses
   if (!data || typeof data !== "object") {
     return {
       success: false,
