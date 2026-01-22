@@ -201,10 +201,10 @@ export default function InspectorPanel({ active, runtime }) {
     );
   }
 
-  if (active === "debug") {
+  if (active === "ENV") {
     return (
       <div style={{ padding: 12, color: "#aaa", fontFamily: "monospace" }}>
-        Debug inspector will appear here
+        ENV inspector will appear here
       </div>
     );
   }
