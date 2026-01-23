@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ayr-runtime.vercel.app/sitemap.xml
